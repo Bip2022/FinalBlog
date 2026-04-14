@@ -1,0 +1,55 @@
+@if (TempData["SuccessMessage"] != null || TempData["ErrorMessage"] != null || TempData["Success"] != null ||
+TempData["Error"] != null || TempData["Info"] != null)
+{
+  <script src="/lib/jquery/dist/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+  <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" />
+
+  <script type="text/javascript">
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      timeOut: 5000,
+      extendedTimeOut: 2000
+    };
+
+    @* Success Messages *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+      <text>
+        toastr.success('@TempData["SuccessMessage"]');
+      </text>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+      <text>
+        toastr.success('@TempData["Success"]');
+      </text>
+    }
+
+    @* Error Messages *@
+    @if (TempData["ErrorMessage"] != null)
+    {
+      <text>
+        toastr.error('@TempData["ErrorMessage"]');
+      </text>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+      <text>
+        toastr.error('@TempData["Error"]');
+      </text>
+    }
+
+    @* INFO Messages (NEW) *@
+    @if (TempData["Info"] != null)
+    {
+      <text>
+        toastr.info('@TempData["Info"]');
+      </text>
+    }
+
+  </script>
+}

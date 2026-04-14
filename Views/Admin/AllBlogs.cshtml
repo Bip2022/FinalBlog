@@ -1,0 +1,93 @@
+@model List<FinalBlog.Models.Blog>
+
+@{
+  ViewData["Title"] = "All Blogs";
+  string StatusBadge(FinalBlog.Models.Blog b)
+  {
+    if (b.IsDraft) return "bg-secondary";
+    if (!b.IsApproved) return "bg-warning text-dark";
+    return "bg-success";
+  }
+  string StatusLabel(FinalBlog.Models.Blog b)
+  {
+    if (b.IsDraft) return "Draft";
+    if (!b.IsApproved) return "Pending";
+    return "Live";
+  }
+}
+
+<partial name="_NotificationPartial" />
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+  <h2 class="mb-0">📚 All Blogs</h2>
+  <div class="d-flex flex-wrap gap-2">
+    <a asp-controller="Admin" asp-action="PendingBlogs" class="btn btn-outline-warning btn-md rounded-pill">
+      Pending only
+    </a>
+    <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-dark btn-md rounded-pill">
+      ⬅ Dashboard
+    </a>
+  </div>
+</div>
+
+<p class="text-muted small mb-3">Delete any post (draft, pending, or live). Comments and likes are removed with the post.</p>
+
+<hr />
+
+<div class="table-responsive">
+  <table class="table table-bordered table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Category</th>
+        <th>Created</th>
+        <th>Status</th>
+        <th>Likes</th>
+        <th style="width: 220px;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach (var blog in Model)
+      {
+        <tr>
+          <td>@blog.Title</td>
+          <td>@blog.Author</td>
+          <td>@(blog.Category?.Name ?? "—")</td>
+          <td>@blog.CreatedDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+          <td>
+            <span class="badge @StatusBadge(blog)">@StatusLabel(blog)</span>
+          </td>
+          <td>@(blog.Likes?.Count ?? 0)</td>
+          <td>
+            <div class="d-flex flex-wrap gap-1">
+              @if (!blog.IsDraft && blog.IsApproved)
+              {
+                <a asp-controller="Blog" asp-action="Details" asp-route-id="@blog.Id" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">View</a>
+              }
+              else if (!blog.IsDraft)
+              {
+                <a asp-controller="Admin" asp-action="ViewPendingBlog" asp-route-id="@blog.Id" class="btn btn-outline-primary btn-sm">Review</a>
+              }
+              else
+              {
+                <span class="text-muted small align-self-center me-1">Draft</span>
+              }
+              <form asp-controller="Admin" asp-action="DeleteBlog" asp-route-id="@blog.Id" method="post" class="d-inline"
+                    onsubmit="return confirm('Permanently delete this blog?');">
+                <button type="submit" class="btn btn-danger btn-sm">
+                  <i class="bi bi-trash"></i> Delete
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (Model.Count == 0)
+{
+  <p class="text-muted">No blogs in the database.</p>
+}

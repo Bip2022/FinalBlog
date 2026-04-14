@@ -1,0 +1,33 @@
+@{
+  ViewData["Title"] = "Sign Out";
+}
+
+<partial name="_NotificationPartial" />
+
+<div class="container mt-5 text-center">
+
+  <div class="card shadow-sm mx-auto" style="max-width: 500px;">
+    <div class="card-body p-4">
+
+      <h3 class="mb-3">
+        <i class="bi bi-box-arrow-right"></i> Sign Out
+      </h3>
+
+      <p>Are you sure you want to sign out?</p>
+
+      <form asp-controller="Account" asp-action="Signout" method="post">
+
+        <button type="submit" class="btn btn-danger w-100 mb-2">
+          Yes, Sign Out
+        </button>
+
+      </form>
+
+      <a asp-controller="Blog" asp-action="Index" class="btn btn-secondary w-100">
+        Cancel
+      </a>
+
+    </div>
+  </div>
+
+</div>

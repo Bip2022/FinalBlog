@@ -1,0 +1,71 @@
+@model FinalBlog.Models.Blog
+
+@{
+  ViewData["Title"] = $"Review: {Model.Title}";
+}
+
+<!-- NOTIFICATION -->
+<partial name="_NotificationPartial" />
+
+<!-- HEADER -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+  <h2 class="mb-0">👁️ Review Pending Blog</h2>
+  <a asp-controller="Admin" asp-action="PendingBlogs" class="btn btn-dark btn-md rounded-pill">
+    ⬅ Back to Pending Blogs
+  </a>
+</div>
+
+<hr />
+
+<!-- BLOG CONTENT -->
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+
+    <!-- BLOG CARD -->
+    <div class="card shadow-sm border-0">
+      @if (!string.IsNullOrEmpty(Model.ImagePath))
+      {
+        <img src="@Model.ImagePath" class="card-img-top" alt="@Model.Title" style="object-fit: cover; height: 400px;" />
+      }
+      <div class="card-body">
+
+        <!-- META INFO -->
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <span class="badge bg-primary">@Model.Category?.Name</span>
+          <small class="text-muted">by @Model.Author</small>
+          <small class="text-muted">• @Model.CreatedDate.ToString("MMM dd, yyyy")</small>
+        </div>
+
+        <!-- TITLE -->
+        <h1 class="h2 card-title mb-4">@Model.Title</h1>
+
+        <!-- CONTENT -->
+        <div class="card-text mb-4" style="line-height: 1.7;">
+          @Html.Raw(Model.Text.Replace("\n", "<br />"))
+        </div>
+
+        <!-- STATS -->
+        <div class="text-muted small">
+          <i class="fas fa-heart text-danger me-1"></i> @Model.LikeCount Likes
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ADMIN ACTIONS -->
+    <div class="mt-4 d-flex flex-wrap gap-2 justify-content-center align-items-center">
+      <form asp-controller="Admin" asp-action="ApproveBlog" asp-route-id="@Model.Id" method="post" class="d-inline">
+        <button type="submit" class="btn btn-success btn-lg">
+          <i class="bi bi-check-circle"></i> Approve Blog
+        </button>
+      </form>
+      <form asp-controller="Admin" asp-action="DeleteBlog" asp-route-id="@Model.Id" method="post" class="d-inline"
+            onsubmit="return confirm('Permanently delete this blog?');">
+        <button type="submit" class="btn btn-danger btn-lg">
+          <i class="bi bi-trash"></i> Delete blog
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>

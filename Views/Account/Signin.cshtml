@@ -1,0 +1,75 @@
+@using FinalBlog.Models.ViewModels
+@model SigninViewModel
+
+@{
+  ViewData["Title"] = "Sign In";
+}
+<!-- TempData Messages -->
+<partial name="_NotificationPartial" />
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Welcome Back</h2>
+                    
+          <form asp-action="Signin" method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <!-- Email Field -->
+            <div class="mb-3">
+              <label asp-for="UsernameOrEmail" class="form-label">Username or Email</label>
+              <input asp-for="UsernameOrEmail" class="form-control" placeholder="Username/name@gmail.com" />
+              <span asp-validation-for="UsernameOrEmail" class="text-danger small"></span>
+            </div>
+
+            <!-- Password Field -->
+            <div class="mb-3">
+              <label asp-for="Password" class="form-label">Password</label>
+              <input asp-for="Password" class="form-control" />
+              <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <!-- Forgot Password -->
+            <div class="mb-3 text-end">
+              <a asp-controller="Account" asp-action="ForgotPassword">
+                Forgot Password?
+              </a>
+
+            
+
+              <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Sign In</button>
+              </div>
+
+              <div class="text-center my-4 position-relative">
+                <hr>
+                <span class="position-absolute top-50 start-50 translate-middle bg-white px-1">
+                  OR
+                </span>
+              </div>
+
+              <div class="d-grid gap-2">
+                <a asp-controller="Account" asp-action="GoogleLogin" class="btn btn-danger">
+                  Continue with Google
+                </a>
+              </div>
+            </form>
+
+        
+            <p class="text-center mb-0 mt-2">
+              Don't have an account? <a asp-action="Signup">Join us today</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @section Scripts {
+    @{
+      await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+  }

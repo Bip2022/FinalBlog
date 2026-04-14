@@ -1,0 +1,186 @@
+﻿@model IEnumerable<FinalBlog.Models.Blog>
+
+@{
+    ViewData["Title"] = "Blog";
+    var likedSet = ViewBag.LikedBlogIds as HashSet<int> ?? new HashSet<int>();
+    var canLike = User.Identity?.IsAuthenticated == true && (User.IsInRole("User") || User.IsInRole("Admin"));
+    var canReadFull = User.Identity?.IsAuthenticated == true && (User.IsInRole("User") || User.IsInRole("Admin"));
+    var listReturnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+
+      
+
+    
+
+    </div>
+    <div class="row gx-4">
+        <!-- LEFT: BLOG LIST -->
+        <div class="col-lg-9">
+            <div class="mb-4 d-flex justify-content-between align-items-center">
+                <div>
+                    @if (ViewBag.CategoryFilterName is string catName && !string.IsNullOrEmpty(catName))
+                    {
+                        <h1 class="h3 mb-1">@catName</h1>
+                        <p class="text-muted mb-0">
+                            Posts in this category.
+                            @if (!canReadFull)
+                            {
+                                <span class="d-block small mt-1"><a asp-controller="Account" asp-action="Signin" class="text-decoration-none">Sign in</a> to read full posts.</span>
+                            }
+                        </p>
+                    }
+                    else if (ViewBag.Query is string q && !string.IsNullOrEmpty(q))
+                    {
+                        <h1 class="h3 mb-1">Search results</h1>
+                        <p class="text-muted mb-0">
+                            Matching “@q” in title, text, or category.
+                            @if (!canReadFull)
+                            {
+                                <span class="d-block small mt-1"><a asp-controller="Account" asp-action="Signin" class="text-decoration-none">Sign in</a> to read full posts.</span>
+                            }
+                        </p>
+                    }
+                    else
+                    {
+                        <h1 class="h3 mb-1">Latest Blog Posts</h1>
+                        <p class="text-muted mb-0">
+                            @if (canReadFull)
+                            {
+                                <text>Read the newest stories and updates from the blog.</text>
+                            }
+                            else
+                            {
+                                <text>Browse titles and topics here. <a asp-controller="Account" asp-action="Signin" class="text-decoration-none">Sign in</a> to read full posts, like, and comment.</text>
+                            }
+                        </p>
+                    }
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">All posts</a>
+            </div>
+
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var blog in Model)
+                {
+                    <div class="card mb-4 shadow-sm border-0">
+                        @if (!string.IsNullOrEmpty(blog.ImagePath))
+                        {
+                            <img src="@blog.ImagePath" class="card-img-top" alt="@blog.Title"
+                                 style="object-fit: cover; height: 280px;" />
+                        }
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                @if (blog.Category != null)
+                                {
+                                    <a asp-action="ByCategory" asp-route-id="@blog.CategoryId"
+                                       class="badge bg-primary text-decoration-none">@blog.Category.Name</a>
+                                }
+                                <small class="text-muted">by @blog.Author</small>
+                                <small class="text-muted">• @blog.CreatedDate.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            <h3 class="h5 card-title">@blog.Title</h3>
+                            @if (canReadFull)
+                            {
+                                <p class="card-text text-muted">@((blog.Text?.Length > 180) ? blog.Text.Substring(0, 180) + "..." : blog.Text)</p>
+                            }
+                            else
+                            {
+                                <p class="card-text text-muted small mb-2">Full article is available after you sign in.</p>
+                            }
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    @if (canReadFull)
+                                    {
+                                        <a asp-action="Details" asp-route-id="@blog.Id" class="btn btn-sm btn-primary">Read more</a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Account" asp-action="Signin" asp-route-returnUrl="@Url.Action("Details", "Blog", new { id = blog.Id })" class="btn btn-sm btn-primary">Sign in to read</a>
+                                    }
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-muted small">
+                                            <i class="fas fa-heart text-danger me-1"></i>@blog.LikeCount
+                                        </span>
+                                        @if (canLike)
+                                        {
+                                            var liked = likedSet.Contains(blog.Id);
+                                            <form asp-action="ToggleLike" method="post" class="d-inline m-0">
+                                                <input type="hidden" name="blogId" value="@blog.Id" />
+                                                <input type="hidden" name="returnUrl" value="@listReturnUrl" />
+                                                <button type="submit" class="btn btn-sm @(liked ? "btn-danger" : "btn-outline-danger") rounded-pill py-0 px-2">
+                                                    @if (liked)
+                                                    {
+                                                        <text><i class="fas fa-heart"></i></text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <text><i class="far fa-heart"></i></text>
+                                                    }
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            else
+                {
+                    <div class="alert alert-info">
+                        No blogs available at the moment. Check back later.
+                    </div>
+                }
+            </div>
+
+            <!-- RIGHT: SIDEBAR -->
+            <div class="col-lg-3">
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0">Categories</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        @if (ViewBag.Categories is List<FinalBlog.Models.Category> categories && categories.Any())
+                        {
+                            @foreach (var category in categories)
+                            {
+                                var isActive = ViewBag.ActiveCategoryId is int activeId && activeId == category.Id;
+                                <a asp-action="ByCategory" asp-route-id="@category.Id"
+                                   class="list-group-item list-group-item-action text-start @(isActive ? "active" : "")">
+                                    @category.Name
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <div class="list-group-item text-muted">No categories found.</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom">
+                        <h5 class="mb-0">Trending Blogs</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        @if (ViewBag.TrendingBlogs is List<FinalBlog.Models.Blog> trending && trending.Any())
+                        {
+                            @foreach (var item in trending)
+                            {
+                                <a asp-action="Details" asp-route-id="@item.Id" class="list-group-item list-group-item-action">
+                                    <div class="fw-semibold">@item.Title</div>
+                                    <small class="text-muted">@item.Category?.Name • @item.LikeCount Likes</small>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <div class="list-group-item text-muted">No trending blogs yet.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>

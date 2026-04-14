@@ -1,0 +1,113 @@
+@model FinalBlog.Models.ViewModels.BlogViewModel
+@{
+  ViewData["Title"] = Model.Blog.Id > 0 ? "Edit draft" : "Create New Blog";
+  var drafts = ViewBag.Drafts as List<FinalBlog.Models.Blog>;
+}
+<!-- TOAST NOTIFICATION -->
+<partial name="_NotificationPartial" />
+<div class="row">
+  <div class="col-md-6 offset-md-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="mb-0">@ViewData["Title"]</h2>
+
+      <a asp-action="Index" class="btn btn-secondary">
+        Back to List
+      </a>
+    </div>
+
+    @if (drafts != null && drafts.Any())
+    {
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light py-2">
+          <span class="fw-semibold small">Your drafts</span>
+        </div>
+        <ul class="list-group list-group-flush">
+          @foreach (var d in drafts)
+          {
+            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+              <div class="me-2 text-truncate">
+                <span class="fw-medium">@d.Title</span>
+                <small class="text-muted d-block">Saved @d.CreatedDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</small>
+              </div>
+              <a asp-action="EditDraft" asp-route-id="@d.Id"
+                 class="btn btn-sm btn-outline-primary flex-shrink-0">Continue</a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <hr />
+
+    <form asp-action="@(Model.Blog.Id > 0 ? "EditDraft" : "Create")" method="post" enctype="multipart/form-data">
+      <input type="hidden" asp-for="Blog.Id" />
+
+      <!-- Title -->
+      <div class="form-group mb-3">
+        <label asp-for="Blog.Title"></label>
+        <input asp-for="Blog.Title" class="form-control" />
+        <span asp-validation-for="Blog.Title" class="text-danger"></span>
+        <p class="form-text small text-muted mb-0">For drafts, leave blank to use “Untitled draft”. To publish, use
+          5–200 characters.</p>
+        </div>
+
+        <!-- Category -->
+        <div class="form-group mb-3">
+          <label>Category</label>
+
+          <select asp-for="Blog.CategoryId" asp-items="ViewBag.Categories" class="form-control">
+            <option value="">-- Optional for drafts; required when submitting for approval --</option>
+          </select>
+          <span asp-validation-for="Blog.CategoryId" class="text-danger"></span>
+        </div>
+
+        <!-- Author -->
+        <div class="form-group mb-3">
+          <label asp-for="Blog.Author"></label>
+          <input asp-for="Blog.Author" class="form-control" readonly />
+          <span asp-validation-for="Blog.Author" class="text-danger"></span>
+        </div>
+
+        <!-- Content -->
+        <div class="form-group mb-3">
+          <label asp-for="Blog.Text"></label>
+          <textarea asp-for="Blog.Text" class="form-control" rows="10"></textarea>
+          <span asp-validation-for="Blog.Text" class="text-danger"></span>
+          <p class="form-text small text-muted mb-0">Drafts may be short; published posts need at least 20 characters.</p>
+        </div>
+
+        <!-- Image -->
+        <div class="form-group mb-3">
+          <label>Image</label>
+          <input type="file" name="ImageFile" class="form-control" />
+          <span asp-validation-for="ImageFile" class="text-danger"></span>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" name="submitAction" value="publish" class="btn btn-primary">
+          Submit for approval
+        </button>
+        <button type="submit" name="submitAction" value="draft" class="btn btn-outline-secondary ms-1">
+          Save draft
+        </button>
+        <a asp-action="Index" class="btn btn-secondary ms-1">
+          Back to List
+        </a>
+      </form>
+
+    </div>
+  </div>
+
+
+
+  @section Scripts {
+    <script
+    src="https://cdn.tiny.cloud/1/bzcp33fyvxi7v5lk9l8o0auw67micylhnisnmean95lzeyc3/tinymce/6/tinymce.min.js"></script>
+
+    <script>
+      tinymce.init({
+        selector: 'textarea'
+      });
+    </script>
+  }

@@ -1,0 +1,36 @@
+@{
+  Layout = "_AdminLayout";
+}
+
+<h2>Dashboard</h2>
+
+<div class="row">
+
+  <div class="col-md-4">
+    <div class="card text-center shadow">
+      <div class="card-body">
+        <h5>Total Users</h5>
+        <h2>@ViewBag.TotalUsers</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-center shadow">
+      <div class="card-body">
+        <h5>Pending Users</h5>
+        <h2>@ViewBag.PendingUsers</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card text-center shadow">
+      <div class="card-body">
+        <h5>Pending Blogs</h5>
+        <h2>@ViewBag.PendingBlogs</h2>
+      </div>
+    </div>
+  </div>
+
+</div>

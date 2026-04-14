@@ -1,0 +1,88 @@
+@model IEnumerable<FinalBlog.Models.Notification>
+
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">
+        <i class="bi bi-bell"></i> Notifications
+    </h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            No notifications available.
+        </div>
+    }
+    else
+    {
+        <div class="list-group">
+
+            @foreach (var notification in Model)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-start">
+
+                    <!-- LEFT -->
+                    <div>
+                        <p class="mb-1 fw-semibold">
+                            @notification.Message
+                        </p>
+
+                        <small class="text-muted">
+                            @notification.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd hh:mm tt")
+                        </small>
+                    </div>
+
+                    <!-- RIGHT -->
+                    <div class="d-flex gap-2">
+
+                        <button class="btn btn-sm btn-danger" onclick="deleteNotification(@notification.Id)">
+                            Delete
+                        </button>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
+
+<script>
+    function deleteNotification(id) {
+        if (confirm('Are you sure you want to delete this notification?')) {
+            fetch('/Account/DeleteNotification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify({ id: id })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the item
+                        const item = document.querySelector(`[onclick="deleteNotification(${id})"]`).closest('.list-group-item');
+                        if (item) {
+                            item.remove();
+                        }
+                        // Update navbar badge
+                        const badge = document.querySelector('#user-notifications .badge');
+                        if (badge) {
+                            const currentCount = parseInt(badge.textContent) || 0;
+                            if (currentCount > 1) {
+                                badge.textContent = currentCount - 1;
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+        }
+    }
+</script>

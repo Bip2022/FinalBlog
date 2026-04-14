@@ -1,0 +1,78 @@
+@using FinalBlog.Models.ViewModels
+@model SignupViewModel
+
+@{
+  ViewData["Title"] = "Create an Account";
+}
+<!-- TempData Messages -->
+<partial name="_NotificationPartial" />
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="text-center mb-4">Join Us Today</h2>
+                          
+          <form asp-action="Signup" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <!-- Username Field -->
+            <div class="mb-3">
+              <label asp-for="Username" class="form-label">Username</label>
+              <input asp-for="Username" class="form-control" placeholder="Choose a username" />
+              <span asp-validation-for="Username" class="text-danger small"></span>
+            </div>
+
+            <!-- Email Field -->
+            <div class="mb-3">
+              <label asp-for="Email" class="form-label">Email Address</label>
+              <input asp-for="Email" class="form-control" placeholder="name@example.com" />
+              <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <!-- Password Field -->
+            <div class="mb-3">
+              <label asp-for="Password" class="form-label">Password</label>
+              <input asp-for="Password" class="form-control" type="password" />
+              <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div class="mb-3">
+              <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
+              <input asp-for="ConfirmPassword" class="form-control" />
+              <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+              <button type="submit" class="btn btn-primary">Sign Up</button>
+            </div>
+            <div class="text-center my-4 position-relative">
+              <hr>
+              <span class="position-absolute top-50 start-50 translate-middle bg-white px-2">
+                OR
+              </span>
+            </div>
+            <div class="d-grid gap-2">
+              <a asp-controller="Account" asp-action="GoogleLogin" class="btn btn-danger">
+                Continue with Google
+              </a>
+            </div>
+          </form>
+
+            
+          <p class="text-center mb-0 mt-2">
+            Already a member? <a asp-action="Signin">Sign in here</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+  @{
+    await Html.RenderPartialAsync("_ValidationScriptsPartial");
+  }
+}

@@ -1,0 +1,147 @@
+@model IEnumerable<FinalBlog.Models.Activity>
+
+@{
+  ViewData["Title"] = "Activity Logs";
+}
+
+<div class="container-fluid mt-4">
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0"><i class="fas fa-file-alt"></i> Activity Logs</h2>
+      <p class="text-muted small">Total Activities: <strong>@ViewBag.TotalActivities</strong></p>
+    </div>
+    <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline-primary">
+      <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-dark text-white py-3">
+      <h5 class="mb-0"><i class="fas fa-list"></i> All Activity Logs</h5>
+    </div>
+    <div class="card-body p-0">
+      @if (Model != null && Model.Any())
+      {
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 5%;">#</th>
+                <th style="width: 15%;">Type</th>
+                <th style="width: 25%;">Action</th>
+                <th style="width: 20%;">User / Blog</th>
+                <th style="width: 20%;">Date & Time</th>
+                <th style="width: 15%;">Info</th>
+              </tr>
+            </thead>
+            <tbody>
+              @{ int counter = ((int)ViewBag.CurrentPage - 1) * 20 + 1; }
+              @foreach (var activity in Model)
+              {
+                <tr>
+                  <td><span class="badge bg-secondary">@counter</span></td>
+                  <td>
+                    @if (activity.Type == "Blog")
+                    {
+                      <span class="badge bg-info text-dark">
+                        <i class="fas fa-pen-fancy"></i> Blog
+                      </span>
+                    }
+                    else
+                    {
+                      <span class="badge bg-success text-dark">
+                        <i class="fas fa-user"></i> User
+                      </span>
+                    }
+                  </td>
+                  <td><strong>@activity.Action</strong></td>
+                  <td>
+                    @if (activity.Type == "Blog")
+                    {
+                      <span>📝 @activity.BlogTitle</span>
+                    }
+                    else
+                    {
+                      <span>👤 @activity.Username</span>
+                    }
+                  </td>
+                  <td>
+                    <small class="text-muted">
+                      <div><i class="far fa-calendar"></i> @activity.CreatedAt.ToString("MMM dd, yyyy")</div>
+                      <div><i class="far fa-clock"></i> @activity.CreatedAt.ToString("HH:mm:ss")</div>
+                    </small>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="@activity.Action - @activity.CreatedAt.ToString("g")">
+                      <i class="fas fa-info-circle"></i>
+                    </button>
+                  </td>
+                </tr>
+                counter++;
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      else
+      {
+        <div class="p-5 text-center text-muted">
+          <i class="fas fa-inbox fa-3x mb-3 text-light"></i>
+          <p>No activity logs found yet.</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (ViewBag.TotalPages > 1)
+  {
+    <nav aria-label="Page navigation" class="mt-4">
+      <ul class="pagination justify-content-center">
+        @if (ViewBag.CurrentPage > 1)
+        {
+          <li class="page-item">
+            <a class="page-link" asp-controller="Admin" asp-action="Logs" asp-route-page="1">
+              <i class="fas fa-chevron-left"></i> First
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" asp-controller="Admin" asp-action="Logs" asp-route-page="@(ViewBag.CurrentPage - 1)">
+              <i class="fas fa-angle-left"></i> Previous
+            </a>
+          </li>
+        }
+
+        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+        {
+          if (i == ViewBag.CurrentPage)
+          {
+            <li class="page-item active">
+              <span class="page-link">@i</span>
+            </li>
+          }
+          else
+          {
+            <li class="page-item">
+              <a class="page-link" asp-controller="Admin" asp-action="Logs" asp-route-page="@i">@i</a>
+            </li>
+          }
+        }
+
+        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+        {
+          <li class="page-item">
+            <a class="page-link" asp-controller="Admin" asp-action="Logs" asp-route-page="@(ViewBag.CurrentPage + 1)">
+              Next <i class="fas fa-angle-right"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" asp-controller="Admin" asp-action="Logs" asp-route-page="@ViewBag.TotalPages">
+              Last <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+  }
+</div>

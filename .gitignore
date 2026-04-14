@@ -1,0 +1,155 @@
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# Package manager files
+# npm
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# .NET
+*.cache
+*.csproj.user
+*.openshift
+*.publish.xml
+# Generated files
+Generated_Code/
+
+# ASP.NET Core
+wwwroot/node_modules/
+wwwroot/.sass-cache/
+wwwroot/dist/
+wwwroot/build/
+
+# Logs and databases
+*.log
+*.db
+*.sqlite
+*.sqlite-journal
+*.mdf
+*.ldf
+
+# Environment variables
+.env
+*.env.*
+!.env.example
+
+# Application settings
+appsettings.json
+!appsettings.example.json
+
+# Backup files
+*~
+*.bak
+*.swp
+
+# Temporary files
+*.tmp
+*.temp
+_temp/
+temp/
+
+# Visual Studio files
+*.vspscc
+*.vssscc
+.TF
+*.pidb
+*.pgc
+*.pgd
+*.rsp
+*.ssh
+*.vssscc.build
+
+# Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# Azure
+/coverage/
+.artifacts/
+```
+
+# ASP.NET MVC specific
+[_vti_cnf]
+[_vti_pvt]
+
+# Testing files
+*TestResults/
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# StyleCop
+StyleCopCache.xml
+
+# Files built by Visual Studio
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.map
+*.exp
+*.lib
+*.sbr
+*.pdb
+*.pdb.[Mm][Dd]
+
+# Assembly Folders
+__vstmp
+__ReSharper*/
+[Tt]emp[Ss]cope.*
+
+# Add-in files
+*.addin
+*.shadow
+
+# Office Template Cache
+*.dotm
+*.dotx
+*.xlam
+*.xla
+*.xlsm
+*.xls
+*.xlt
+*.xlw
+*.ppt
+*.pot
+*.pps
+*.pptx
+*.potx
+*.ppsx
+*.doc
+*.docx
+*.docm
+*.dot
+*.rtf
+
+# Log & database
+*.log
+*.sqlite

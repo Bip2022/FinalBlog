@@ -1,0 +1,288 @@
+@inject AppDbContext _context
+
+@{
+  var pendingUsers = _context.Users.Count(u => !u.IsApproved);
+  var pendingBlogs = _context.Blogs.Count(b => !b.IsApproved && !b.IsDraft);
+  var totalNotifications = pendingUsers + pendingBlogs;
+  var userNotifications = 0;
+  if (User.Identity!.IsAuthenticated)
+  {
+    var userId = _context.Users.Where(u => u.Username == User.Identity.Name).Select(u => u.Id).FirstOrDefault();
+    userNotifications = _context.Notifications.Count(n => n.UserId == userId && !n.IsRead);
+  }
+}
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white m-2 shadow-sm">
+  <div class="container d-flex justify-content-between">
+
+    <!-- LEFT SIDE -->
+    <div class="d-flex align-items-center">
+
+      <!-- Logo -->
+      <a class="navbar-brand me-3" asp-controller="Blog" asp-action="Index">
+        <img src="~/images/logo.png" alt="MyBlog Logo" style="height:70px;">
+        </a>
+
+        <!-- Desktop Search -->
+        <form method="get" asp-controller="Blog" asp-action="Search" class="d-none d-lg-flex">
+          <input class="form-control form-control-sm me-2" type="search" name="query" placeholder="Search posts or categories…" required />
+
+          <button class="btn btn-outline-dark btn-sm" type="submit">
+            <i class="bi bi-search"></i>
+          </button>
+        </form>
+
+      </div>
+
+      <!-- RIGHT SIDE -->
+      <div class="d-flex align-items-center gap-3 position-relative">
+        <!-- Write Blog -->
+        @if (User.Identity!.IsAuthenticated &&
+                                                                    (User.IsInRole("Admin") || User.IsInRole("User")))
+        {
+          <a class="btn btn-dark rounded-pill px-3 py-2" asp-controller="Blog" asp-action="Create">
+            <i class="bi bi-pencil"></i> Write Blog
+          </a>
+        }
+
+        <!-- 📝 BLOG -->
+        <a class="btn btn-dark rounded-pill px-3 py-2 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Blog" ? "active" : "")"
+           asp-controller="Blog" asp-action="Index">
+          📝 Blog
+        </a>
+
+        <!-- 🔔 NOTIFICATION (Admin only) -->
+        @if (User.Identity!.IsAuthenticated && User.IsInRole("Admin"))
+        {
+          <div class="dropdown">
+
+            <button class="btn btn-dark position-relative rounded-circle" type="button" data-bs-toggle="dropdown">
+
+              <i class="bi bi-bell"></i>
+
+              <!-- Badge -->
+              @if (totalNotifications > 0)
+              {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  @totalNotifications
+                </span>
+              }
+
+            </button>
+
+            <!-- Dropdown -->
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+
+              <li class="dropdown-item-text fw-bold">
+                Notifications
+              </li>
+
+              <li>
+                <hr class="dropdown-divider" />
+              </li>
+
+              <li>
+                <a class="dropdown-item" asp-controller="Admin" asp-action="PendingUsers">
+                  ⏳ Pending Users (@pendingUsers)
+                </a>
+              </li>
+
+              <li>
+                <a class="dropdown-item" asp-controller="Admin" asp-action="PendingBlogs">
+                  📝 Pending Blogs (@pendingBlogs)
+                </a>
+              </li>
+
+            </ul>
+
+          </div>
+        }
+
+        <!-- 🔔 USER NOTIFICATIONS -->
+        @if (User.Identity!.IsAuthenticated && !User.IsInRole("Admin"))
+        {
+          <div class="dropdown" id="user-notifications">
+
+            <button class="btn btn-dark position-relative rounded-circle" type="button" data-bs-toggle="dropdown">
+
+              <i class="bi bi-bell"></i>
+
+              <!-- Badge -->
+              @if (userNotifications > 0)
+              {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                  @userNotifications
+                </span>
+              }
+
+            </button>
+
+            <!-- Dropdown -->
+            <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 300px;">
+
+              <li class="dropdown-item-text fw-bold">
+                Your Notifications
+              </li>
+
+              <li>
+                <hr class="dropdown-divider" />
+              </li>
+
+              @if (userNotifications > 0)
+              {
+                var notifications = _context.Notifications
+                  .Where(n => n.UserId == _context.Users.Where(u => u.Username == User.Identity.Name).Select(u =>
+          u.Id).FirstOrDefault() && !n.IsRead)
+                  .OrderByDescending(n => n.CreatedAt)
+                  .Take(5)
+                  .ToList();
+
+                @foreach (var notif in notifications)
+                {
+                  <li id="notif-@notif.Id">
+                    <a class="dropdown-item" href="#" onclick="markAsRead(@notif.Id); return false;">
+                      <small>@notif.Message</small>
+                      <br />
+                      <small class="text-muted">@notif.CreatedAt.ToString("MMM dd, HH:mm")</small>
+                    </a>
+                  </li>
+                }
+
+                <li>
+                  <hr class="dropdown-divider" />
+                </li>
+
+                <li>
+                  <a class="dropdown-item text-center" asp-controller="Account" asp-action="Notifications">
+                    View All Notifications
+                  </a>
+                </li>
+              }
+              else
+              {
+                <li class="dropdown-item text-muted">
+                  No new notifications
+                </li>
+              }
+
+            </ul>
+
+          </div>
+        }
+
+        <!-- AUTH SECTION -->
+        @if (User.Identity.IsAuthenticated)
+        {
+          <div class="dropdown">
+
+            <button class="btn btn-dark rounded-circle" type="button" data-bs-toggle="dropdown">
+              <i class="bi bi-person"></i>
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+
+              <!-- Username -->
+              <li>
+                <span class="dropdown-item-text fw-semibold">
+                  @User.Identity.Name
+                </span>
+              </li>
+
+              <li>
+                <hr class="dropdown-divider" />
+              </li>
+
+              <!-- Admin Dashboard -->
+              @if (User.IsInRole("Admin"))
+              {
+                <li>
+                  <a class="dropdown-item text-primary" asp-controller="Admin" asp-action="Dashboard">
+                    🛠 Admin Dashboard
+                  </a>
+                </li>
+
+                <li>
+                  <hr class="dropdown-divider" />
+                </li>
+              }
+
+              <!-- Profile -->
+              <li>
+                <a class="dropdown-item" asp-controller="Account" asp-action="Profile">
+                  Profile
+                </a>
+              </li>
+
+              <!-- Logout -->
+              <li>
+                <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Signout">
+                  Sign Out
+                </a>
+              </li>
+
+            </ul>
+
+          </div>
+        }
+        else
+        {
+          <!-- SIGN IN -->
+          <a class="btn btn-dark rounded-pill px-3 py-2" asp-controller="Account" asp-action="Signin">
+            Sign In
+          </a>
+        }
+
+      </div>
+
+    </div>
+  </nav>
+
+  <script>
+    function markAsRead(id) {
+      fetch('/Account/MarkAsRead', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        },
+        body: JSON.stringify({ id: id })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Hide the notification item
+            const notifItem = document.getElementById('notif-' + id);
+            if (notifItem) {
+              notifItem.style.display = 'none';
+            }
+            // Update badge count
+            const badge = document.querySelector('#user-notifications .badge');
+            if (badge) {
+              const currentCount = parseInt(badge.textContent) || 0;
+              if (currentCount > 1) {
+                badge.textContent = currentCount - 1;
+              } else {
+                badge.style.display = 'none';
+              }
+            }
+          }
+        });
+    }
+  </script>
+
+  <script>
+    // Mark all notifications as read when dropdown is shown
+    document.addEventListener('DOMContentLoaded', function () {
+      const dropdown = document.getElementById('user-notifications');
+      if (dropdown) {
+        dropdown.addEventListener('shown.bs.dropdown', function () {
+          // Get all unread notification ids
+          const unreadItems = dropdown.querySelectorAll('.dropdown-menu li[id^="notif-"]');
+          unreadItems.forEach(item => {
+            const id = item.id.replace('notif-', '');
+            markAsRead(id);
+          });
+        });
+      }
+    });
+  </script>
