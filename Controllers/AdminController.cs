@@ -298,6 +298,22 @@ namespace FinalBlog.Controllers
       // ✅ fix: get image path from blog
       var imagePath = blog.ImagePath;
 
+      // Check if the blog is pending and send notification to author
+      if (!blog.IsApproved && !blog.IsDraft)
+      {
+        var author = await _context.Users.FirstOrDefaultAsync(u => u.Username == blog.Author);
+        if (author != null)
+        {
+          _context.Notifications.Add(new Notification
+          {
+            UserId = author.Id,
+            Message = $"Your blog '{blog.Title}' has been deleted by an administrator.",
+            IsRead = false,
+            CreatedAt = DateTime.UtcNow
+          });
+        }
+      }
+
       _context.Blogs.Remove(blog);
       _context.Activities.Add(new Activity
       {
