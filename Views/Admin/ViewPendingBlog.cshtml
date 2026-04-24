@@ -2,6 +2,20 @@
 
 @{
   ViewData["Title"] = $"Review: {Model.Title}";
+
+  string? NormalizeImageUrl(string? imagePath)
+  {
+    if (string.IsNullOrWhiteSpace(imagePath)) return null;
+
+    var p = imagePath.Trim();
+    var wwwrootIndex = p.IndexOf("wwwroot", StringComparison.OrdinalIgnoreCase);
+    if (wwwrootIndex >= 0)
+      p = p[(wwwrootIndex + "wwwroot".Length)..];
+
+    p = p.Replace('\\', '/').TrimStart('~');
+    if (!p.StartsWith('/')) p = "/" + p;
+    return Url.Content("~" + p);
+  }
 }
 
 <!-- NOTIFICATION -->
@@ -25,7 +39,7 @@
     <div class="card shadow-sm border-0">
       @if (!string.IsNullOrEmpty(Model.ImagePath))
       {
-        <img src="@Model.ImagePath" class="card-img-top" alt="@Model.Title" style="object-fit: cover; height: 400px;" />
+        <img src="@NormalizeImageUrl(Model.ImagePath)" class="card-img-top" alt="@Model.Title" style="object-fit: cover; height: 400px;" />
       }
       <div class="card-body">
 

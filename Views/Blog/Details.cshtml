@@ -1,139 +1,219 @@
 @model FinalBlog.Models.ViewModels.BlogDetailsViewModel
+
 @{
-    var blog = Model.Blog;
-    ViewData["Title"] = blog.Title;
-    var canInteract = User.Identity?.IsAuthenticated == true && (User.IsInRole("User") || User.IsInRole("Admin"));
-    var comments = blog.Comments?.OrderBy(c => c.CommentDate).ToList() ?? new List<Comment>();
+    ViewData["Title"] = Model.Blog.Title;
+    var canLike = User.Identity?.IsAuthenticated == true && (User.IsInRole("User") || User.IsInRole("Admin"));
+    var canComment = User.Identity?.IsAuthenticated == true && (User.IsInRole("User") || User.IsInRole("Admin"));
+
+    string? NormalizeImageUrl(string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath)) return null;
+
+        if (imagePath.StartsWith("/images/")) return imagePath;
+        if (imagePath.StartsWith("~/")) return Url.Content(imagePath);
+
+        if (imagePath.Contains("wwwroot"))
+        {
+            var wwwrootIndex = imagePath.IndexOf("wwwroot", StringComparison.OrdinalIgnoreCase);
+            var relativePath = imagePath[(wwwrootIndex + "wwwroot".Length)..];
+            return relativePath.Replace('\\', '/');
+        }
+
+        if (!imagePath.StartsWith("/")) imagePath = "/" + imagePath;
+        return imagePath;
+    }
 }
 
-<div class="py-4 mx-auto px-2 px-md-3" style="max-width: 800px;">
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb mb-0 small">
-            <li class="breadcrumb-item">
-                <a asp-action="Index" class="text-decoration-none">Blog</a>
-            </li>
-            @if (blog.Category != null)
-            {
-                <li class="breadcrumb-item">
-                    <a asp-action="ByCategory" asp-route-id="@blog.CategoryId" class="text-decoration-none">@blog.Category.Name</a>
-                </li>
-            }
-            <li class="breadcrumb-item active text-truncate" aria-current="page" title="@blog.Title">@blog.Title</li>
-        </ol>
-    </nav>
+<!-- TOAST NOTIFICATION -->
+<partial name="_NotificationPartial" />
 
-    @if (User.IsInRole("Admin"))
-    {
-        <div class="alert alert-danger d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-2 mb-3 py-2 px-3" role="region" aria-label="Admin actions">
-            <span class="small mb-0"><strong>Admin</strong> — you can remove this post from the site.</span>
-            <form asp-controller="Admin" asp-action="DeleteBlog" asp-route-id="@blog.Id" method="post" class="d-inline mb-0"
-                  onsubmit="return confirm('Permanently delete this blog?');">
-                <button type="submit" class="btn btn-danger btn-sm">Delete blog</button>
-            </form>
-        </div>
-    }
-
-    <article class="blog-detail card border-0 shadow-sm overflow-hidden">
-        @if (!string.IsNullOrEmpty(blog.ImagePath))
-        {
-            <img src="@blog.ImagePath" class="w-100" alt="@blog.Title"
-                 style="object-fit: cover; max-height: 420px;" />
-        }
-        <div class="card-body p-4 p-md-5">
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                @if (blog.Category != null)
-                {
-                    <a asp-action="ByCategory" asp-route-id="@blog.CategoryId"
-                       class="badge bg-primary text-decoration-none rounded-pill px-3 py-2">
-                        @blog.Category.Name
-                    </a>
-                }
-                <span class="text-muted small">by <span class="text-dark">@blog.Author</span></span>
-                <span class="text-muted small">• @blog.CreatedDate.ToString("MMMM dd, yyyy")</span>
-                <span class="text-muted small d-flex align-items-center gap-2">
-                    <i class="fas fa-heart text-danger"></i>
-                    <span>@blog.LikeCount</span>
-                    @if (canInteract)
+<div class="container-fluid mt-4">
+    <div class="row gx-4">
+        <!-- MAIN CONTENT -->
+        <div class="col-lg-9">
+            <!-- BREADCRUMB -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Blog</a></li>
+                    @if (Model.Blog.Category != null)
                     {
-                        <form asp-action="ToggleLike" method="post" class="d-inline ms-1">
-                            <input type="hidden" name="blogId" value="@blog.Id" />
-                            <button type="submit" class="btn btn-sm @(Model.IsLikedByCurrentUser ? "btn-danger" : "btn-outline-danger") rounded-pill">
-                                @if (Model.IsLikedByCurrentUser)
-                                {
-                                    <text><i class="fas fa-heart me-1"></i> Liked</text>
-                                }
-                                else
-                                {
-                                    <text><i class="far fa-heart me-1"></i> Like</text>
-                                }
-                            </button>
-                        </form>
+                        <li class="breadcrumb-item"><a asp-action="ByCategory" asp-route-id="@Model.Blog.CategoryId">@Model.Blog.Category.Name</a></li>
                     }
-                </span>
-            </div>
+                    <li class="breadcrumb-item active">@Model.Blog.Title</li>
+                </ol>
+            </nav>
 
-            <h1 class="h2 fw-bold mb-4">@blog.Title</h1>
-
-            <div class="blog-article-body text-secondary lh-lg" style="white-space: pre-wrap;">@blog.Text</div>
-
-            <hr class="my-4" />
-
-            <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4">
-                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1"></i> All posts
-                </a>
-                @if (blog.Category != null)
+            <!-- BLOG POST -->
+            <article class="card border-0 shadow-sm mb-4">
+                @if (!string.IsNullOrEmpty(Model.Blog.ImagePath))
                 {
-                    <a asp-action="ByCategory" asp-route-id="@blog.CategoryId" class="btn btn-primary btn-sm">
-                        More in @blog.Category.Name
-                    </a>
+                    <img src="@NormalizeImageUrl(Model.Blog.ImagePath)" class="card-img-top" alt="@Model.Blog.Title"
+                         style="object-fit: cover; height: 400px;" />
                 }
-            </div>
 
-            @if (!canInteract)
-            {
-                <p class="text-muted small mb-0">
-                    <a asp-controller="Account" asp-action="Signin" class="text-decoration-none">Sign in</a> to like this post or leave a comment.
-                </p>
-            }
-        </div>
-    </article>
+                <div class="card-body">
+                    <!-- HEADER -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        @if (Model.Blog.Category != null)
+                        {
+                            <a asp-action="ByCategory" asp-route-id="@Model.Blog.CategoryId"
+                               class="badge bg-primary text-decoration-none">@Model.Blog.Category.Name</a>
+                        }
+                        <small class="text-muted">by @Model.Blog.Author</small>
+                        <small class="text-muted">• @Model.Blog.CreatedDate.ToString("MMM dd, yyyy")</small>
+                    </div>
 
-    <section class="card border-0 shadow-sm mt-4">
-        <div class="card-header bg-white border-bottom py-3">
-            <h2 class="h5 mb-0">Comments (@comments.Count)</h2>
-        </div>
-        <div class="card-body p-4">
-            @if (canInteract)
-            {
-                <form asp-action="AddComment" method="post" class="mb-4">
-                    <input type="hidden" name="blogId" value="@blog.Id" />
-                    <label for="commentText" class="form-label small text-muted">Add a comment</label>
-                    <textarea id="commentText" name="text" class="form-control mb-2" rows="3" maxlength="500"
-                              placeholder="Write something… (2–500 characters)" required></textarea>
-                    <button type="submit" class="btn btn-dark btn-sm">Post comment</button>
-                </form>
-            }
+                    <!-- TITLE -->
+                    <h1 class="h2 card-title mb-4">@Model.Blog.Title</h1>
 
-            @if (comments.Count == 0)
-            {
-                <p class="text-muted mb-0">No comments yet.@(canInteract ? " Be the first to comment." : "")</p>
-            }
-            else
-            {
-                <ul class="list-unstyled mb-0">
-                    @foreach (var c in comments)
+                    <!-- CONTENT -->
+                    <div class="blog-content mb-4">
+                        @Html.Raw(Model.Blog.Text.Replace("\n", "<br />"))
+                    </div>
+
+                    <!-- LIKE BUTTON -->
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small">
+                                <i class="fas fa-heart text-danger me-1"></i>@Model.Blog.LikeCount Likes
+                            </span>
+                            @if (canLike)
+                            {
+                                <form asp-action="ToggleLike" method="post" class="d-inline m-0">
+                                    <input type="hidden" name="blogId" value="@Model.Blog.Id" />
+                                    <button type="submit" class="btn btn-sm @(Model.IsLikedByCurrentUser ? "btn-danger" : "btn-outline-danger") rounded-pill py-0 px-2">
+                                        @if (Model.IsLikedByCurrentUser)
+                                        {
+                                            <text><i class="fas fa-heart"></i></text>
+                                        }
+                                        else
+                                        {
+                                            <text><i class="far fa-heart"></i></text>
+                                        }
+                                    </button>
+                                </form>
+                            }
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Blog</a>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-action="Delete" asp-route-id="@Model.Blog.Id" class="btn btn-danger btn-sm">Delete Blog</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- COMMENTS SECTION -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Comments (@(Model.Blog.Comments?.Count ?? 0))</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Blog.Comments != null && Model.Blog.Comments.Any())
                     {
-                        <li class="border-bottom pb-3 mb-3">
-                            <div class="d-flex justify-content-between align-items-start gap-2">
-                                <span class="fw-semibold">@c.UserName</span>
-                                <small class="text-muted text-nowrap">@c.CommentDate.ToString("MMM dd, yyyy HH:mm")</small>
+                        @foreach (var comment in Model.Blog.Comments.OrderByDescending(c => c.CommentDate))
+                        {
+                            <div class="comment mb-3 pb-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-semibold small text-primary">@comment.UserName</div>
+                                        <div class="comment-text mt-1">@Html.Raw(comment.Text.Replace("\n", "<br />"))</div>
+                                    </div>
+                                    <small class="text-muted ms-2 flex-shrink-0">@comment.CommentDate.ToString("MMM dd, yyyy HH:mm")</small>
+                                </div>
                             </div>
-                            <p class="mb-0 mt-1 text-secondary" style="white-space: pre-wrap;">@c.Text</p>
-                        </li>
+                        }
                     }
-                </ul>
-            }
+                    else
+                    {
+                        <div class="text-muted text-center py-4">
+                            <i class="fas fa-comments fa-2x mb-2"></i>
+                            <p>No comments yet. Be the first to share your thoughts!</p>
+                        </div>
+                    }
+                </div>
+
+                @if (canComment)
+                {
+                    <div class="card-footer bg-light">
+                        <h6>Add a Comment</h6>
+                        <form asp-action="AddComment" method="post" class="mt-3">
+                            <input type="hidden" name="blogId" value="@Model.Blog.Id" />
+                            <div class="mb-3">
+                                <textarea name="text" class="form-control" rows="3" placeholder="Share your thoughts..."
+                                          maxlength="500" required></textarea>
+                                <div class="form-text">Maximum 500 characters</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="card-footer bg-light text-center">
+                        <a asp-controller="Account" asp-action="Signin" asp-route-returnUrl="@Url.Action("Details", "Blog", new { id = Model.Blog.Id })"
+                           class="text-decoration-none">
+                            <i class="fas fa-sign-in-alt me-1"></i>Sign in to leave a comment
+                        </a>
+                    </div>
+                }
+            </div>
         </div>
-    </section>
+
+        <!-- SIDEBAR -->
+        <div class="col-lg-3">
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Categories</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    @if (ViewBag.Categories is List<FinalBlog.Models.Category> categories && categories.Any())
+                    {
+                        @foreach (var category in categories)
+                        {
+                            <a asp-action="ByCategory" asp-route-id="@category.Id"
+                               class="list-group-item list-group-item-action text-start">
+                                @category.Name
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <div class="list-group-item text-muted">No categories found.</div>
+                    }
+                </div>
+            </div>
+
+            <div class="card mb-4 shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">Trending Blogs</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    @if (ViewBag.TrendingBlogs is List<FinalBlog.Models.Blog> trending && trending.Any())
+                    {
+                        @foreach (var item in trending)
+                        {
+                            <a asp-action="Details" asp-route-id="@item.Id" class="list-group-item list-group-item-action">
+                                <div class="fw-semibold">@item.Title</div>
+                                <small class="text-muted">@item.Category?.Name • @item.LikeCount Likes</small>
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <div class="list-group-item text-muted">No trending blogs yet.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Optional: Add any client-side functionality here
+    </script>
+}

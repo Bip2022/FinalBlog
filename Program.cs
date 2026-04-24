@@ -89,6 +89,8 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+// Serve runtime files from wwwroot (e.g., uploaded blog images under /images/blogs)
+app.UseStaticFiles();
 app.UseRouting();
 
 // Session must be before auth
@@ -97,14 +99,11 @@ app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Static assets (if you're using .NET 8+)
-app.MapStaticAssets();
-
 // Routes
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Blog}/{action=Index}/{id?}"
 )
-.WithStaticAssets();
+;
 
 app.Run();

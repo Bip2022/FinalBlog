@@ -1,6 +1,7 @@
 using FinalBlog.Models;
 using FinalBlog.Models.ViewModels;
 using FinalBlog.Services;
+using FinalBlog.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,13 @@ namespace FinalBlog.Controllers
   {
     private readonly AppDbContext _context;
     private readonly EmailService _emailService;
+    private readonly ImageHelper _imageHelper;
 
-    public AdminController(AppDbContext context, EmailService emailService)
+    public AdminController(AppDbContext context, EmailService emailService, ImageHelper imageHelper)
     {
       _context = context;
       _emailService = emailService;
+      _imageHelper = imageHelper;
     }
 
     public async Task<IActionResult> Dashboard()
@@ -297,6 +300,12 @@ namespace FinalBlog.Controllers
       }
       // ✅ fix: get image path from blog
       var imagePath = blog.ImagePath;
+
+      // Delete the actual image file from storage if exists
+      if (!string.IsNullOrEmpty(imagePath))
+      {
+        _imageHelper.DeleteImage(imagePath);
+      }
 
       // Check if the blog is pending and send notification to author
       if (!blog.IsApproved && !blog.IsDraft)

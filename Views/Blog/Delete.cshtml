@@ -1,0 +1,85 @@
+@model FinalBlog.Models.Blog
+
+@{
+  ViewData["Title"] = "Delete Blog";
+  Layout = "~/Views/Shared/_Layout.cshtml";
+
+  string? NormalizeImageUrl(string? imagePath)
+  {
+    if (string.IsNullOrWhiteSpace(imagePath)) return null;
+
+    var p = imagePath.Trim();
+
+    // remove physical path if exists
+    if (p.Contains("wwwroot"))
+    {
+      var index = p.IndexOf("wwwroot", StringComparison.OrdinalIgnoreCase);
+      p = p[(index + "wwwroot".Length)..];
+    }
+
+    p = p.Replace("\\", "/");
+
+    if (!p.StartsWith("/")) p = "/" + p;
+
+    return Url.Content("~" + p);
+  }
+}
+
+<div class="container mt-5">
+
+  <div class="card shadow-sm mx-auto" style="max-width: 600px;">
+    <div class="card-body p-4">
+
+      <h3 class="text-danger mb-3 text-center">
+        ⚠️ Delete Blog
+      </h3>
+
+      <p class="text-muted text-center">
+        Are you sure you want to permanently delete this blog?
+      </p>
+
+      <hr />
+
+      <dl class="row">
+
+        <dt class="col-sm-4">Title</dt>
+        <dd class="col-sm-8">@Model.Title</dd>
+
+        <dt class="col-sm-4">Author</dt>
+        <dd class="col-sm-8">@Model.Author</dd>
+
+        <dt class="col-sm-4">Created Date</dt>
+        <dd class="col-sm-8">@Model.CreatedDate.ToString("MMM dd, yyyy")</dd>
+
+        <dt class="col-sm-4">Approved</dt>
+        <dd class="col-sm-8">@Model.IsApproved</dd>
+
+        <dt class="col-sm-4">Draft</dt>
+        <dd class="col-sm-8">@Model.IsDraft</dd>
+
+        @if (!string.IsNullOrEmpty(Model.ImagePath))
+        {
+          <dt class="col-sm-4">Image</dt>
+          <dd class="col-sm-8">
+            <img src="@NormalizeImageUrl(Model.ImagePath)" class="img-thumbnail" style="max-width: 250px;" />
+          </dd>
+        }
+
+      </dl>
+
+      <form asp-action="Delete" method="post" class="mt-3 text-center">
+        <input type="hidden" asp-for="Id" />
+
+        <button type="submit" class="btn btn-danger ">
+          <i class="fas fa-trash-alt me-2"></i>Delete Blog
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary ms-2">
+          Cancel
+        </a>
+      </form>
+
+    </div>
+  </div>
+
+</div>

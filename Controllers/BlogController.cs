@@ -160,35 +160,16 @@ public class BlogController : Controller
             ImagePath = imagePath,
             CreatedDate = DateTime.UtcNow,
             IsDraft = saveAsDraft,
-            IsApproved = false
+            IsApproved = !saveAsDraft && isAdmin // Admin posts are auto-approved when not draft
         };
 
         _context.Blogs.Add(blog);
 
         if (!saveAsDraft)
         {
-            _context.Activities.Add(new Activity
-            {
-                Action = "Blog Created",
-                Username = User.Identity?.Name,
-                Type = "Blog",
-                BlogTitle = blog.Title,
-                CreatedAt = DateTime.UtcNow
-            });
-            TempData["Info"] = "Your blog will be posted after admin approval.";
-        }
-        else
-        {
-            TempData["SuccessMessage"] = "Draft saved. You can continue editing from this page anytime.";
-        }
-        if (!saveAsDraft)
-        {
             if (isAdmin)
             {
-                TempData["SuccessMessage"] = "Blog published successfully.";
-            }
-            else
-            {
+                // Admin creating a non-draft blog - auto-approved
                 _context.Activities.Add(new Activity
                 {
                     Action = "Blog Created",
@@ -197,9 +178,26 @@ public class BlogController : Controller
                     BlogTitle = blog.Title,
                     CreatedAt = DateTime.UtcNow
                 });
-
+                TempData["SuccessMessage"] = "Blog published successfully.";
+            }
+            else
+            {
+                // Regular user creating a non-draft blog - needs approval
+                _context.Activities.Add(new Activity
+                {
+                    Action = "Blog Created",
+                    Username = User.Identity?.Name,
+                    Type = "Blog",
+                    BlogTitle = blog.Title,
+                    CreatedAt = DateTime.UtcNow
+                });
                 TempData["Info"] = "Your blog will be posted after admin approval.";
             }
+        }
+        else
+        {
+            // Saving as draft
+            TempData["SuccessMessage"] = "Draft saved. You can continue editing from this page anytime.";
         }
 
         await _context.SaveChangesAsync();
@@ -244,6 +242,7 @@ public class BlogController : Controller
         }
 
         var saveAsDraft = string.Equals(submitAction, "draft", StringComparison.OrdinalIgnoreCase);
+        var isAdmin = User.IsInRole("Admin");
         ApplyPublishOrDraftValidation(saveAsDraft, blogViewModel);
 
         if (!ModelState.IsValid)
@@ -288,7 +287,9 @@ public class BlogController : Controller
         }
 
         existing.IsDraft = false;
-        existing.IsApproved = false;
+        existing.IsApproved = !isAdmin; // Admin posts are auto-approved when published from draft
+        existing.Author = User.Identity?.Name ?? existing.Author;
+
         _context.Activities.Add(new Activity
         {
             Action = "Blog Created",
@@ -298,7 +299,15 @@ public class BlogController : Controller
             CreatedAt = DateTime.UtcNow
         });
         await _context.SaveChangesAsync();
-        TempData["Info"] = "Your blog will be posted after admin approval.";
+
+        if (isAdmin)
+        {
+            TempData["SuccessMessage"] = "Blog published successfully.";
+        }
+        else
+        {
+            TempData["Info"] = "Your blog will be posted after admin approval.";
+        }
         return RedirectToAction("Index");
     }
 
@@ -322,6 +331,22 @@ public class BlogController : Controller
         var userId = await GetCurrentUserIdAsync();
         var isLiked = userId.HasValue &&
             await _context.Likes.AnyAsync(l => l.BlogId == id && l.UserId == userId.Value);
+
+        // Load sidebar data
+        var categories = await _context.Categories
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+
+        var trendingBlogs = await PublishedOnly(_context.Blogs)
+            .Include(b => b.Category)
+            .Include(b => b.Likes)
+            .OrderByDescending(b => b.Likes.Count)
+            .ThenByDescending(b => b.CreatedDate)
+            .Take(3)
+            .ToListAsync();
+
+        ViewBag.Categories = categories;
+        ViewBag.TrendingBlogs = trendingBlogs;
 
         var vm = new BlogDetailsViewModel
         {
@@ -555,5 +580,82 @@ public class BlogController : Controller
 
         _logger.LogInformation("ByCategory {CategoryId} ({Name}): {Count} posts", id, category.Name, blogs.Count);
         return View(nameof(Index), blogs);
+    }
+
+    // GET: Blog/Delete/5
+    [HttpGet]
+    public async Task<IActionResult> Delete(int? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin)
+        {
+            return Forbid();
+        }
+
+        var blog = await _context.Blogs
+            .Include(b => b.Category)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (blog == null)
+        {
+            return NotFound();
+        }
+
+        return View(blog);
+    }
+
+    // POST: Blog/Delete/5
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id)
+    {
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin)
+        {
+            return Forbid();
+        }
+
+        var blog = await _context.Blogs
+            .Include(b => b.Category)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (blog == null)
+        {
+            return NotFound();
+        }
+
+        // Delete the associated image file if exists
+        if (!string.IsNullOrEmpty(blog.ImagePath))
+        {
+            _imageHelper.DeleteImage(blog.ImagePath);
+        }
+
+        // Remove associated likes and comments first (if not handled by cascade)
+        var likes = _context.Likes.Where(l => l.BlogId == id);
+        _context.Likes.RemoveRange(likes);
+
+        var comments = _context.Comments.Where(c => c.BlogId == id);
+        _context.Comments.RemoveRange(comments);
+
+        // Add activity log
+        _context.Activities.Add(new Activity
+        {
+            Action = "Blog Deleted",
+            Username = blog.Author,
+            Type = "Blog",
+            BlogTitle = blog.Title,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        _context.Blogs.Remove(blog);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Blog deleted successfully.";
+        return RedirectToAction(nameof(Index));
     }
 }

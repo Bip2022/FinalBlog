@@ -36,6 +36,7 @@ wwwroot/node_modules/
 wwwroot/.sass-cache/
 wwwroot/dist/
 wwwroot/build/
+wwwroot/images/
 
 # Logs and databases
 *.log

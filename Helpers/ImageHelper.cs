@@ -109,36 +109,40 @@ namespace FinalBlog.Helpers
       }
     }
 
-    internal void DeleteImage(string imageUrl)
+    public void DeleteImage(string imageUrl)
     {
       if (string.IsNullOrEmpty(imageUrl))
         return;
 
       try
       {
-        // ONLY profile images allowed to delete
-        if (!imageUrl.Contains("/profile/"))
+        // We only allow deleting from under "/images/"
+        if (!imageUrl.StartsWith("/images/"))
           return;
 
-        var fileName = Path.GetFileName(imageUrl);
+        // Get the relative path under "images"
+        var relativePath = imageUrl.Substring("/images/".Length); // e.g., "blogs/hash.jpg" or "profile/hash.jpg"
 
-        var fullPath = Path.Combine(
-            _webHostEnvironment.WebRootPath,
-            "images",
-            "profile",
-            fileName
-        );
+        // Combine with WebRootPath/images
+        var fullPath = Path.Combine(_webHostEnvironment.WebRootPath, "images", relativePath);
+
+        // Security: ensure the path is still under the images directory
+        var imagesRoot = Path.Combine(_webHostEnvironment.WebRootPath, "images");
+        if (!Path.GetFullPath(fullPath).StartsWith(Path.GetFullPath(imagesRoot)))
+        {
+          _logger.LogWarning("Attempted to delete image outside of images directory: {ImageUrl}", imageUrl);
+          return;
+        }
 
         if (File.Exists(fullPath))
         {
           File.Delete(fullPath);
-          _logger.LogInformation($"Profile image deleted: {fileName}");
+          _logger.LogInformation($"Image deleted: {relativePath}");
         }
       }
       catch (Exception ex)
       {
-
-        _logger.LogError(ex, "Error deleting profile image: {ImageUrl}", imageUrl);
+        _logger.LogError(ex, "Error deleting image: {ImageUrl}", imageUrl);
       }
     }
     // =========================
@@ -184,8 +188,7 @@ namespace FinalBlog.Helpers
       if (existingFile != null)
       {
         _logger.LogInformation("Duplicate image found: {FileName}", Path.GetFileName(existingFile));
-        return $"/images/profile/{Path.GetFileName(existingFile)}";
-
+        return $"/images/{folderName}/{Path.GetFileName(existingFile)}";
       }
 
       var fileName = $"{hash}{ext}";
