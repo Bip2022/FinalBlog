@@ -403,9 +403,10 @@ public class BlogController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [HttpPost]
-    public async Task<IActionResult> ToggleLike([FromBody] ToggleLikeRequest request)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleLike(int blogId)
     {
-        var blogExists = await PublishedOnly(_context.Blogs).AnyAsync(b => b.Id == request.BlogId);
+        var blogExists = await PublishedOnly(_context.Blogs).AnyAsync(b => b.Id == blogId);
         if (!blogExists)
         {
             return Json(new { success = false, message = "Blog not found." });
@@ -418,31 +419,26 @@ public class BlogController : Controller
         }
 
         var existing = await _context.Likes
-            .FirstOrDefaultAsync(l => l.BlogId == request.BlogId && l.UserId == userId.Value);
+            .FirstOrDefaultAsync(l => l.BlogId == blogId && l.UserId == userId.Value);
 
         if (existing != null)
         {
             _context.Likes.Remove(existing);
             await _context.SaveChangesAsync();
-            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == request.BlogId);
+            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == blogId);
             return Json(new { success = true, liked = false, likeCount = likeCount, message = "Like removed." });
         }
         else
         {
             _context.Likes.Add(new Like
             {
-                BlogId = request.BlogId,
+                BlogId = blogId,
                 UserId = userId.Value
             });
             await _context.SaveChangesAsync();
-            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == request.BlogId);
+            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == blogId);
             return Json(new { success = true, liked = true, likeCount = likeCount, message = "Thanks for liking this post!" });
         }
-    }
-
-    public class ToggleLikeRequest
-    {
-        public int BlogId { get; set; }
     }
 
     private async Task PopulateCreateViewBagsAsync()

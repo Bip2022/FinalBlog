@@ -216,6 +216,7 @@
         </div>
 
         @section Scripts {
+            @Html.AntiForgeryToken()
             <script>
                 document.addEventListener('DOMContentLoaded', function () {
                     const likeBtn = document.getElementById('like-btn');
@@ -227,13 +228,13 @@
                             const isLiked = this.getAttribute('data-is-liked') === 'true';
 
                             try {
+                                const formData = new FormData();
+                                formData.append('blogId', blogId);
+                                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
                                 const response = await fetch('/Blog/ToggleLike', {
                                     method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                                    },
-                                    body: JSON.stringify({ blogId: parseInt(blogId) })
+                                    body: formData
                                 });
 
                                 const result = await response.json();
@@ -263,7 +264,7 @@
                                     toastr.error(result.message || 'An error occurred.');
                                 }
                             } catch (error) {
-                                console.error('Error:', error);
+                                console.error('AJAX Error:', error);
                                 toastr.error('An error occurred while processing your request.');
                             }
                         });
