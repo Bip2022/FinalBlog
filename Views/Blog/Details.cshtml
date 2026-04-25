@@ -228,16 +228,30 @@
                             const isLiked = this.getAttribute('data-is-liked') === 'true';
 
                             try {
-                                const formData = new FormData();
-                                formData.append('blogId', blogId);
-                                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+                                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                                const params = new URLSearchParams();
+                                params.append('blogId', blogId);
+                                params.append('__RequestVerificationToken', token);
+
+                                console.log('Sending like request for blogId:', blogId);
 
                                 const response = await fetch('/Blog/ToggleLike', {
                                     method: 'POST',
-                                    body: formData
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded'
+                                    },
+                                    body: params.toString()
                                 });
 
+                                console.log('Response status:', response.status);
+                                console.log('Response headers:', response.headers);
+
+                                if (!response.ok) {
+                                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                                }
+
                                 const result = await response.json();
+                                console.log('Response data:', result);
 
                                 if (result.success) {
                                     // Update button state based on server response

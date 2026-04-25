@@ -401,11 +401,12 @@ public class BlogController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [HttpPost]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleLike(int blogId)
     {
+        Console.WriteLine($"ToggleLike called with blogId: {blogId}");
         var blogExists = await PublishedOnly(_context.Blogs).AnyAsync(b => b.Id == blogId);
         if (!blogExists)
         {
