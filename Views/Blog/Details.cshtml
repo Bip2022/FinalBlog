@@ -73,27 +73,27 @@
 
                         <!-- LIKE BUTTON -->
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="text-muted small">
-                                    <i class="fas fa-heart text-danger me-1"></i>@Model.Blog.LikeCount Likes
-                                </span>
-                                @if (canLike)
-                                {
-                                    <form asp-action="ToggleLike" method="post" class="d-inline m-0">
-                                        <input type="hidden" name="blogId" value="@Model.Blog.Id" />
-                                        <button type="submit"
-                                                class="btn btn-sm @(Model.IsLikedByCurrentUser ? "btn-danger" : "btn-outline-danger") rounded-pill py-0 px-2">
-                                            @if (Model.IsLikedByCurrentUser)
-                                            {
-                                                <text><i class="fas fa-heart"></i></text>
-                                            }
-                                            else
-                                            {
-                                                <text><i class="far fa-heart"></i></text>
-                                            }
-                                        </button>
-                                    </form>
-                                }
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted small">
+                                        <i class="fas fa-heart text-danger me-1"></i><span id="like-count">@Model.Blog.LikeCount</span> Likes
+                                    </span>
+                                 @if (canLike)
+                                 {
+                                     <button type="button"
+                                             id="like-btn"
+                                             data-blog-id="@Model.Blog.Id"
+                                             data-is-liked="@Model.IsLikedByCurrentUser.ToString().ToLower()"
+                                             class="btn btn-sm @(Model.IsLikedByCurrentUser ? "btn-danger" : "btn-outline-danger") rounded-pill py-0 px-2">
+                                         @if (Model.IsLikedByCurrentUser)
+                                         {
+                                             <text><i class="fas fa-heart"></i></text>
+                                         }
+                                         else
+                                         {
+                                             <text><i class="far fa-heart"></i></text>
+                                         }
+                                     </button>
+                                 }
                             </div>
 
                             <div class="d-flex gap-2">
@@ -217,6 +217,57 @@
 
         @section Scripts {
             <script>
-                // Optional: Add any client-side functionality here
+                document.addEventListener('DOMContentLoaded', function () {
+                    const likeBtn = document.getElementById('like-btn');
+                    const likeCountEl = document.querySelector('.text-muted i.fas.fa-heart').parentElement;
+
+                    if (likeBtn) {
+                        likeBtn.addEventListener('click', async function () {
+                            const blogId = this.getAttribute('data-blog-id');
+                            const isLiked = this.getAttribute('data-is-liked') === 'true';
+
+                            try {
+                                const response = await fetch('/Blog/ToggleLike', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                    },
+                                    body: JSON.stringify({ blogId: parseInt(blogId) })
+                                });
+
+                                const result = await response.json();
+
+                                if (result.success) {
+                                    // Update button state based on server response
+                                    this.setAttribute('data-is-liked', result.liked.toString());
+
+                                    // Update like count
+                                    const likeCountEl = document.getElementById('like-count');
+                                    if (likeCountEl) {
+                                        likeCountEl.textContent = result.likeCount;
+                                    }
+
+                                    if (result.liked) {
+                                        // Now liked
+                                        this.className = 'btn btn-sm btn-danger rounded-pill py-0 px-2';
+                                        this.innerHTML = '<i class="fas fa-heart"></i>';
+                                        toastr.success(result.message);
+                                    } else {
+                                        // Now unliked
+                                        this.className = 'btn btn-sm btn-outline-danger rounded-pill py-0 px-2';
+                                        this.innerHTML = '<i class="far fa-heart"></i>';
+                                        toastr.info(result.message);
+                                    }
+                                } else {
+                                    toastr.error(result.message || 'An error occurred.');
+                                }
+                            } catch (error) {
+                                console.error('Error:', error);
+                                toastr.error('An error occurred while processing your request.');
+                            }
+                        });
+                    }
+                });
             </script>
         }

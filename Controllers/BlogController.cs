@@ -402,51 +402,47 @@ public class BlogController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleLike(int blogId, string? returnUrl = null)
+    [HttpPost]
+    public async Task<IActionResult> ToggleLike([FromBody] ToggleLikeRequest request)
     {
-        var blogExists = await PublishedOnly(_context.Blogs).AnyAsync(b => b.Id == blogId);
+        var blogExists = await PublishedOnly(_context.Blogs).AnyAsync(b => b.Id == request.BlogId);
         if (!blogExists)
         {
-            TempData["ErrorMessage"] = "Blog not found.";
-            return RedirectToAction(nameof(Index));
+            return Json(new { success = false, message = "Blog not found." });
         }
 
         var userId = await GetCurrentUserIdAsync();
         if (userId == null)
         {
-            TempData["ErrorMessage"] = "You must be signed in to like posts.";
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
-            return RedirectToAction(nameof(Details), new { id = blogId });
+            return Json(new { success = false, message = "You must be signed in to like posts." });
         }
 
         var existing = await _context.Likes
-            .FirstOrDefaultAsync(l => l.BlogId == blogId && l.UserId == userId.Value);
-
-        var backToList = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl);
+            .FirstOrDefaultAsync(l => l.BlogId == request.BlogId && l.UserId == userId.Value);
 
         if (existing != null)
         {
             _context.Likes.Remove(existing);
             await _context.SaveChangesAsync();
-            if (!backToList)
-                TempData["Info"] = "Like removed.";
+            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == request.BlogId);
+            return Json(new { success = true, liked = false, likeCount = likeCount, message = "Like removed." });
         }
         else
         {
             _context.Likes.Add(new Like
             {
-                BlogId = blogId,
+                BlogId = request.BlogId,
                 UserId = userId.Value
             });
             await _context.SaveChangesAsync();
-            if (!backToList)
-                TempData["SuccessMessage"] = "Thanks for liking this post!";
+            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == request.BlogId);
+            return Json(new { success = true, liked = true, likeCount = likeCount, message = "Thanks for liking this post!" });
         }
+    }
 
-        if (backToList)
-            return Redirect(returnUrl!);
-        return RedirectToAction(nameof(Details), new { id = blogId });
+    public class ToggleLikeRequest
+    {
+        public int BlogId { get; set; }
     }
 
     private async Task PopulateCreateViewBagsAsync()
