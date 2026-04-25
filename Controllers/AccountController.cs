@@ -649,19 +649,7 @@ namespace FinalBlog.Controllers
       return Json(new { success = true });
     }
 
-    [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> DeleteNotification(int id)
-    {
-      var notification = await _context.Notifications.FindAsync(id);
-      if (notification != null && notification.UserId == _context.Users.Where(u => u.Username == User.Identity!.Name).Select(u => u.Id).FirstOrDefault())
-      {
-        _context.Notifications.Remove(notification);
-        await _context.SaveChangesAsync();
-      }
 
-      return Json(new { success = true });
-    }
 
   }
 }
