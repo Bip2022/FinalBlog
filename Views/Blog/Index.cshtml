@@ -106,24 +106,24 @@
                                     </a>
                                 }
 
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="text-muted small">
-                                        ❤️ @blog.LikeCount
-                                    </span>
+                                 <div class="d-flex align-items-center gap-2">
+                                     <span class="text-muted small">
+                                         ❤️ <span id="like-count-@blog.Id">@blog.LikeCount</span>
+                                     </span>
 
-                                    @if (canLike)
-                                    {
-                                        var liked = likedSet.Contains(blog.Id);
+                                     @if (canLike)
+                                     {
+                                         var liked = likedSet.Contains(blog.Id);
 
-                                        <form asp-action="ToggleLike" method="post" class="d-inline">
-                                            <input type="hidden" name="blogId" value="@blog.Id" />
-                                            <input type="hidden" name="returnUrl" value="@listReturnUrl" />
-
-                                            <button type="submit" class="btn btn-sm @(liked ? "btn-danger" : "btn-outline-danger")">
-                                                @(liked ? "♥" : "♡")
-                                            </button>
-                                        </form>
-                                    }
+                                         <button type="button"
+                                                 id="like-btn-@blog.Id"
+                                                 data-blog-id="@blog.Id"
+                                                 data-is-liked="@liked.ToString().ToLower()"
+                                                 class="btn btn-sm @(liked ? "btn-danger" : "btn-outline-danger")"
+                                                 onclick="event.preventDefault(); toggleLike(this); return false;">
+                                             @(liked ? "♥" : "♡")
+                                         </button>
+                                     }
                                 </div>
 
                             </div>
@@ -189,3 +189,61 @@
 
     </div>
 </div>
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script>
+        async function toggleLike(button) {
+            const blogId = button.getAttribute('data-blog-id');
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const params = new URLSearchParams();
+                params.append('blogId', blogId);
+                params.append('__RequestVerificationToken', token);
+
+                const response = await fetch('/Blog/ToggleLike', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params.toString()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Update button state based on server response
+                    button.setAttribute('data-is-liked', result.liked.toString());
+
+                    // Update like count
+                    const likeCountEl = document.getElementById('like-count-' + blogId);
+                    if (likeCountEl) {
+                        likeCountEl.textContent = result.likeCount;
+                    }
+
+                    if (result.liked) {
+                        // Now liked
+                        button.className = 'btn btn-sm btn-danger';
+                        button.innerHTML = '♥';
+                        toastr.success(result.message);
+                    } else {
+                        // Now unliked
+                        button.className = 'btn btn-sm btn-outline-danger';
+                        button.innerHTML = '♡';
+                        toastr.info(result.message);
+                    }
+                } else {
+                    toastr.error(result.message || 'An error occurred.');
+                }
+            } catch (error) {
+                console.error('AJAX Error:', error);
+                toastr.error('An error occurred while processing your request.');
+            }
+        }
+    </script>
+}
