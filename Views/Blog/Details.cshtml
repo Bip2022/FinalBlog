@@ -223,7 +223,9 @@
                     const likeCountEl = document.querySelector('.text-muted i.fas.fa-heart').parentElement;
 
                     if (likeBtn) {
+                        console.log('Like button found, adding click listener');
                         likeBtn.addEventListener('click', async function () {
+                            console.log('Like button clicked');
                             const blogId = this.getAttribute('data-blog-id');
                             const isLiked = this.getAttribute('data-is-liked') === 'true';
 
@@ -233,8 +235,6 @@
                                 params.append('blogId', blogId);
                                 params.append('__RequestVerificationToken', token);
 
-                                console.log('Sending like request for blogId:', blogId);
-
                                 const response = await fetch('/Blog/ToggleLike', {
                                     method: 'POST',
                                     headers: {
@@ -243,38 +243,42 @@
                                     body: params.toString()
                                 });
 
-                                console.log('Response status:', response.status);
-                                console.log('Response headers:', response.headers);
-
                                 if (!response.ok) {
                                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                                 }
 
                                 const result = await response.json();
-                                console.log('Response data:', result);
 
                                 if (result.success) {
+                                    console.log('Success response:', result);
                                     // Update button state based on server response
                                     this.setAttribute('data-is-liked', result.liked.toString());
+                                    console.log('Updated data-is-liked to:', result.liked);
 
                                     // Update like count
                                     const likeCountEl = document.getElementById('like-count');
                                     if (likeCountEl) {
                                         likeCountEl.textContent = result.likeCount;
+                                        console.log('Updated like count to:', result.likeCount);
+                                    } else {
+                                        console.log('Like count element not found');
                                     }
 
                                     if (result.liked) {
                                         // Now liked
                                         this.className = 'btn btn-sm btn-danger rounded-pill py-0 px-2';
                                         this.innerHTML = '<i class="fas fa-heart"></i>';
+                                        console.log('Set button to liked state');
                                         toastr.success(result.message);
                                     } else {
                                         // Now unliked
                                         this.className = 'btn btn-sm btn-outline-danger rounded-pill py-0 px-2';
                                         this.innerHTML = '<i class="far fa-heart"></i>';
+                                        console.log('Set button to unliked state');
                                         toastr.info(result.message);
                                     }
                                 } else {
+                                    console.log('Error response:', result);
                                     toastr.error(result.message || 'An error occurred.');
                                 }
                             } catch (error) {
