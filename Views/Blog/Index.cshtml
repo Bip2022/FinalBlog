@@ -230,19 +230,35 @@
                         // Now liked
                         button.className = 'btn btn-sm btn-danger';
                         button.innerHTML = '♥';
-                        toastr.success(result.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(result.message);
+                        } else {
+                            console.log('Toastr not available, message:', result.message);
+                        }
                     } else {
                         // Now unliked
                         button.className = 'btn btn-sm btn-outline-danger';
                         button.innerHTML = '♡';
-                        toastr.info(result.message);
+                        if (typeof toastr !== 'undefined') {
+                            toastr.info(result.message);
+                        } else {
+                            console.log('Toastr not available, message:', result.message);
+                        }
                     }
                 } else {
-                    toastr.error(result.message || 'An error occurred.');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(result.message || 'An error occurred.');
+                    } else {
+                        console.error('Toastr not available, error:', result.message);
+                    }
                 }
             } catch (error) {
                 console.error('AJAX Error:', error);
-                toastr.error('An error occurred while processing your request.');
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('An error occurred while processing your request.');
+                } else {
+                    console.error('Toastr not available for error display');
+                }
             }
         }
     </script>
