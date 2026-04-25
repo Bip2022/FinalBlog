@@ -29,9 +29,9 @@
 }
 
 .toast-info {
-    background-color: #AAFF00 !important;
+    background-color: #00FFFF !important;
     color: #000 !important;
-    border-color: #99DD00 !important;
+    border-color: #00DDDD !important;
 }
 
 .toast-warning {

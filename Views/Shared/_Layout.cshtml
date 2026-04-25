@@ -30,28 +30,10 @@
     </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-    <script>
-        // Configure toastr globally
-        toastr.options = {
-            closeButton: true,
-            progressBar: true,
-            timeOut: 3000,
-            extendedTimeOut: 1000,
-            positionClass: "toast-top-right",
-            preventDuplicates: false,
-            newestOnTop: true,
-            showDuration: 300,
-            hideDuration: 1000,
-            showEasing: "swing",
-            hideEasing: "linear",
-            showMethod: "fadeIn",
-            hideMethod: "fadeOut"
-        };
-    </script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+   
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 

@@ -30,6 +30,7 @@
 }
 
 <div class="container-fluid mt-4">
+    @Html.AntiForgeryToken()
     <div class="row gx-4">
 
         <!-- LEFT: BLOG LIST -->
@@ -106,25 +107,22 @@
                                     </a>
                                 }
 
-                                 <div class="d-flex align-items-center gap-2">
-                                     <span class="text-muted small">
-                                         ❤️ <span id="like-count-@blog.Id">@blog.LikeCount</span>
-                                     </span>
+                                   <div class="d-flex align-items-center gap-2">
+                                       <span class="text-muted small">
+                                           ❤️ <span id="like-count-@blog.Id">@blog.LikeCount</span>
+                                       </span>
 
-                                     @if (canLike)
-                                     {
-                                         var liked = likedSet.Contains(blog.Id);
-
-                                         <button type="button"
-                                                 id="like-btn-@blog.Id"
-                                                 data-blog-id="@blog.Id"
-                                                 data-is-liked="@liked.ToString().ToLower()"
-                                                 class="btn btn-sm @(liked ? "btn-danger" : "btn-outline-danger")"
-                                                 onclick="event.preventDefault(); toggleLike(this); return false;">
-                                             @(liked ? "♥" : "♡")
-                                         </button>
-                                     }
-                                </div>
+                                       @if (canLike)
+                                       {
+                                           var liked = likedSet.Contains(blog.Id);
+                                           <button type="button"
+                                                   class="btn btn-sm like-button @(liked ? "btn-danger" : "btn-outline-danger")"
+                                                   data-blog-id="@blog.Id"
+                                                   data-is-liked="@liked.ToString().ToLower()">
+                                               @(liked ? "♥" : "♡")
+                                           </button>
+                                       }
+                                   </div>
 
                             </div>
                         </div>
@@ -190,35 +188,46 @@
     </div>
 </div>
 
-@section Scripts {
-    @Html.AntiForgeryToken()
-    <script>
-        async function toggleLike(button) {
-            const blogId = button.getAttribute('data-blog-id');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.like-button').forEach(button => {
+        button.addEventListener('click', async function(event) {
+            event.preventDefault();
+            this.blur(); // Remove focus to prevent scrolling
+            console.log('Like button clicked for blog', this.getAttribute('data-blog-id'));
 
-            try {
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                const params = new URLSearchParams();
-                params.append('blogId', blogId);
-                params.append('__RequestVerificationToken', token);
+            const blogId = this.getAttribute('data-blog-id');
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-                const response = await fetch('/Blog/ToggleLike', {
+            if (!token) {
+                console.error('Anti-forgery token not found');
+                return;
+            }
+
+        try {
+            const url = '@Url.Action("ToggleLike", "Blog")';
+            const response = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: params.toString()
-                });
+                    body: new URLSearchParams({
+                        blogId: blogId,
+                        returnUrl: 'Index',
+                        __RequestVerificationToken: token
+                    })
+            });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const result = await response.json();
+            console.log('Response received');
+            const result = await response.json();
+            console.log('Result:', result);
 
                 if (result.success) {
-                    // Update button state based on server response
-                    button.setAttribute('data-is-liked', result.liked.toString());
+                    // Update button state
+                    this.setAttribute('data-is-liked', result.liked.toString());
+                    this.textContent = result.liked ? '♥' : '♡';
+                    this.className = 'btn btn-sm ' + (result.liked ? 'btn-danger' : 'btn-outline-danger');
 
                     // Update like count
                     const likeCountEl = document.getElementById('like-count-' + blogId);
@@ -226,24 +235,14 @@
                         likeCountEl.textContent = result.likeCount;
                     }
 
-                    if (result.liked) {
-                        // Now liked
-                        button.className = 'btn btn-sm btn-danger';
-                        button.innerHTML = '♥';
-                        if (typeof toastr !== 'undefined') {
+                    if (typeof toastr !== 'undefined') {
+                        if (result.liked) {
                             toastr.success(result.message);
                         } else {
-                            console.log('Toastr not available, message:', result.message);
+                            toastr.info(result.message);
                         }
                     } else {
-                        // Now unliked
-                        button.className = 'btn btn-sm btn-outline-danger';
-                        button.innerHTML = '♡';
-                        if (typeof toastr !== 'undefined') {
-                            toastr.info(result.message);
-                        } else {
-                            console.log('Toastr not available, message:', result.message);
-                        }
+                        console.log('Toastr not available, message:', result.message);
                     }
                 } else {
                     if (typeof toastr !== 'undefined') {
@@ -260,6 +259,8 @@
                     console.error('Toastr not available for error display');
                 }
             }
-        }
-    </script>
-}
+        });
+    });
+});
+</script>
+

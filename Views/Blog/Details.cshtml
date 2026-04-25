@@ -25,7 +25,6 @@
 }
 
 
-
 <div class="container-fluid mt-4">
     <div class="row gx-4">
         <!-- MAIN CONTENT -->
@@ -71,31 +70,31 @@
                             @Html.Raw(Model.Blog.Text.Replace("\n", "<br />"))
                         </div>
 
-                        <!-- LIKE BUTTON -->
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="text-muted small">
-                                        <i class="fas fa-heart text-danger me-1"></i><span id="like-count">@Model.Blog.LikeCount</span> Likes
-                                    </span>
-                                 @if (canLike)
-                                 {
-                                      <button type="button"
-                                              id="like-btn"
-                                              data-blog-id="@Model.Blog.Id"
-                                              data-is-liked="@Model.IsLikedByCurrentUser.ToString().ToLower()"
-                                              class="btn btn-sm @(Model.IsLikedByCurrentUser ? "btn-danger" : "btn-outline-danger") rounded-pill py-0 px-2"
-                                              onclick="event.preventDefault(); toggleLike(this); return false;">
-                                         @if (Model.IsLikedByCurrentUser)
-                                         {
-                                             <text><i class="fas fa-heart"></i></text>
-                                         }
-                                         else
-                                         {
-                                             <text><i class="far fa-heart"></i></text>
-                                         }
-                                     </button>
-                                 }
-                            </div>
+                          <!-- LIKE BUTTON -->
+                          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                  <div class="d-flex align-items-center gap-2">
+                                      <span id="like-count" class="text-muted small">
+                                          <i class="fas fa-heart text-danger me-1"></i>@Model.Blog.LikeCount Likes
+                                      </span>
+                                   @if (canLike)
+                                   {
+                                        @Html.AntiForgeryToken()
+                                        <button id="like-button"
+                                                data-blog-id="@Model.Blog.Id"
+                                                data-is-liked="@Model.IsLikedByCurrentUser.ToString().ToLower()"
+                                                type="button"
+                                                class="btn btn-sm @(Model.IsLikedByCurrentUser ? "btn-danger" : "btn-outline-danger") rounded-pill py-0 px-2">
+                                            @if (Model.IsLikedByCurrentUser)
+                                            {
+                                                <text><i class="fas fa-heart"></i></text>
+                                            }
+                                            else
+                                            {
+                                                <text><i class="far fa-heart"></i></text>
+                                            }
+                                        </button>
+                                   }
+                              </div>
 
                             <div class="d-flex gap-2">
                                 <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Blog</a>
@@ -216,76 +215,90 @@
             </div>
         </div>
 
-        @section Scripts {
-            @Html.AntiForgeryToken()
-            <script>
-                async function toggleLike(button) {
-                    const blogId = button.getAttribute('data-blog-id');
 
-                    try {
-                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-                        const params = new URLSearchParams();
-                        params.append('blogId', blogId);
-                        params.append('__RequestVerificationToken', token);
 
-                        const response = await fetch('/Blog/ToggleLike', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: params.toString()
-                        });
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('like-button')?.addEventListener('click', async function(event) {
+        event.preventDefault();
+        this.blur(); // Remove focus to prevent scrolling
+        console.log('Like button clicked');
 
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
+        const button = this;
+        const blogId = button.getAttribute('data-blog-id');
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-                        const result = await response.json();
-
-                        if (result.success) {
-                            // Update button state based on server response
-                            button.setAttribute('data-is-liked', result.liked.toString());
-
-                            // Update like count
-                            const likeCountEl = document.getElementById('like-count');
-                            if (likeCountEl) {
-                                likeCountEl.textContent = result.likeCount;
-                            }
-
-                            if (result.liked) {
-                                // Now liked
-                                button.className = 'btn btn-sm btn-danger rounded-pill py-0 px-2';
-                                button.innerHTML = '<i class="fas fa-heart"></i>';
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.success(result.message);
-                                } else {
-                                    console.log('Toastr not available, message:', result.message);
-                                }
-                            } else {
-                                // Now unliked
-                                button.className = 'btn btn-sm btn-outline-danger rounded-pill py-0 px-2';
-                                button.innerHTML = '<i class="far fa-heart"></i>';
-                                if (typeof toastr !== 'undefined') {
-                                    toastr.info(result.message);
-                                } else {
-                                    console.log('Toastr not available, message:', result.message);
-                                }
-                            }
-                        } else {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.error(result.message || 'An error occurred.');
-                            } else {
-                                console.error('Toastr not available, error:', result.message);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('AJAX Error:', error);
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error('An error occurred while processing your request.');
-                        } else {
-                            console.error('Toastr not available for error display');
-                        }
-                    }
-                }
-            </script>
+        if (!token) {
+            console.error('Anti-forgery token not found');
+            return;
         }
+
+        try {
+            const url = '@Url.Action("ToggleLike", "Blog")';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    blogId: blogId,
+                    returnUrl: 'Details',
+                    __RequestVerificationToken: token
+                })
+            });
+
+            console.log('Response received');
+            const result = await response.json();
+            console.log('Result:', result);
+
+            if (result.success) {
+                // Update button state based on server response
+                button.setAttribute('data-is-liked', result.liked.toString());
+
+                // Update like count
+                const likeCountEl = document.getElementById('like-count');
+                if (likeCountEl) {
+                    likeCountEl.innerHTML = '<i class="fas fa-heart text-danger me-1"></i>' + result.likeCount + ' Likes';
+                }
+
+            if (result.liked) {
+                // Now liked
+                button.className = 'btn btn-sm btn-danger rounded-pill py-0 px-2';
+                button.innerHTML = '<i class="fas fa-heart"></i>';
+                console.log('Liked:', result.message);
+                if (typeof toastr !== 'undefined') {
+                    toastr.success(result.message);
+                } else {
+                    console.log('Toastr not available, message:', result.message);
+                }
+            } else {
+                // Now unliked
+                button.className = 'btn btn-sm btn-outline-danger rounded-pill py-0 px-2';
+                button.innerHTML = '<i class="far fa-heart"></i>';
+                console.log('Unliked:', result.message);
+                if (typeof toastr !== 'undefined') {
+                    toastr.info(result.message);
+                } else {
+                    console.log('Toastr not available, message:', result.message);
+                }
+            }
+            } else {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(result.message || 'An error occurred.');
+                } else {
+                    console.error('Toastr not available, error:', result.message);
+                }
+            }
+        } catch (error) {
+            console.error('AJAX Error:', error);
+            if (typeof toastr !== 'undefined') {
+                toastr.error('An error occurred while processing your request.');
+            } else {
+                console.error('Toastr not available for error display');
+            }
+        }
+    });
+});
+</script>
+        

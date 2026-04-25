@@ -401,43 +401,78 @@ public class BlogController : Controller
     }
 
     [HttpPost]
-    [HttpPost]
-    [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleLike(int blogId)
+    public async Task<IActionResult> ToggleLike(int blogId, string returnUrl)
     {
-        var blogExists = await PublishedOnly(_context.Blogs).AnyAsync(b => b.Id == blogId);
-        if (!blogExists)
+        try
         {
-            return Json(new { success = false, message = "Blog not found." });
-        }
-
-        var userId = await GetCurrentUserIdAsync();
-        if (userId == null)
-        {
-            return Json(new { success = false, message = "You must be signed in to like posts." });
-        }
-
-        var existing = await _context.Likes
-            .FirstOrDefaultAsync(l => l.BlogId == blogId && l.UserId == userId.Value);
-
-        if (existing != null)
-        {
-            _context.Likes.Remove(existing);
-            await _context.SaveChangesAsync();
-            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == blogId);
-            return Json(new { success = true, liked = false, likeCount = likeCount, message = "Like removed." });
-        }
-        else
-        {
-            _context.Likes.Add(new Like
+            var blogExists = await PublishedOnly(_context.Blogs).AnyAsync(b => b.Id == blogId);
+            if (!blogExists)
             {
-                BlogId = blogId,
-                UserId = userId.Value
-            });
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "Blog not found." });
+                }
+                TempData["Error"] = "Blog not found.";
+                return RedirectToAction(returnUrl == "Index" ? nameof(Index) : nameof(Details), returnUrl == "Index" ? null : new { id = blogId });
+            }
+
+            var userId = await GetCurrentUserIdAsync();
+            if (userId == null)
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "You must be signed in to like posts." });
+                }
+                TempData["Error"] = "You must be signed in to like posts.";
+                return RedirectToAction(returnUrl == "Index" ? nameof(Index) : nameof(Details), returnUrl == "Index" ? null : new { id = blogId });
+            }
+
+            var existing = await _context.Likes
+                .FirstOrDefaultAsync(l => l.BlogId == blogId && l.UserId == userId.Value);
+
+            bool isLiked = false;
+            int likeCount;
+            string message;
+
+            if (existing != null)
+            {
+                _context.Likes.Remove(existing);
+                isLiked = false;
+                message = "Like removed.";
+            }
+            else
+            {
+                _context.Likes.Add(new Like
+                {
+                    BlogId = blogId,
+                    UserId = userId.Value
+                });
+                isLiked = true;
+                message = "Thanks for liking this post!";
+            }
+
             await _context.SaveChangesAsync();
-            var likeCount = await _context.Likes.CountAsync(l => l.BlogId == blogId);
-            return Json(new { success = true, liked = true, likeCount = likeCount, message = "Thanks for liking this post!" });
+
+            likeCount = await _context.Likes.CountAsync(l => l.BlogId == blogId);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, liked = isLiked, likeCount = likeCount, message = message });
+            }
+
+            TempData[isLiked ? "Success" : "Info"] = message;
+            return RedirectToAction(returnUrl == "Index" ? nameof(Index) : nameof(Details), returnUrl == "Index" ? null : new { id = blogId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ToggleLike for blogId {BlogId}", blogId);
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = false, message = "An error occurred while processing your request." });
+            }
+            TempData["Error"] = $"An error occurred: {ex.Message}";
+            return RedirectToAction(returnUrl == "Index" ? nameof(Index) : nameof(Details), returnUrl == "Index" ? null : new { id = blogId });
         }
     }
 

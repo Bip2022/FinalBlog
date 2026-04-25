@@ -113,7 +113,8 @@ namespace FinalBlog.Controllers
 
       // ✅ VERIFY USER
       user.IsEmailConfirmed = true;
-      user.EmailToken = Guid.NewGuid().ToString(); // Optional: Regenerate token to prevent reuse 
+      user.Role = "User";
+      user.EmailToken = Guid.NewGuid().ToString(); // Optional: Regenerate token to prevent reuse
       user.EmailTokenExpiry = DateTime.UtcNow.AddMinutes(15); // Optional: Set a short expiry for the token after verification for security
 
       await _context.SaveChangesAsync();
