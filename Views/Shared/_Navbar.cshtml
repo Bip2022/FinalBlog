@@ -140,7 +140,7 @@
                 @foreach (var notif in notifications)
                 {
                   <li id="notif-@notif.Id">
-                    <a class="dropdown-item" href="#" onclick="markAsRead(@notif.Id); return false;">
+                    <a class="dropdown-item" asp-controller="Account" asp-action="Notifications">
                       <small>@notif.Message</small>
                       <br />
                       <small class="text-muted">@notif.CreatedAt.ToString("MMM dd, HH:mm")</small>
@@ -270,19 +270,3 @@
     }
   </script>
 
-  <script>
-    // Mark all notifications as read when dropdown is shown
-    document.addEventListener('DOMContentLoaded', function () {
-      const dropdown = document.getElementById('user-notifications');
-      if (dropdown) {
-        dropdown.addEventListener('shown.bs.dropdown', function () {
-          // Get all unread notification ids
-          const unreadItems = dropdown.querySelectorAll('.dropdown-menu li[id^="notif-"]');
-          unreadItems.forEach(item => {
-            const id = item.id.replace('notif-', '');
-            markAsRead(id);
-          });
-        });
-      }
-    });
-  </script>
