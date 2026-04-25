@@ -307,20 +307,17 @@ namespace FinalBlog.Controllers
         _imageHelper.DeleteImage(imagePath);
       }
 
-      // Check if the blog is pending and send notification to author
-      if (!blog.IsApproved && !blog.IsDraft)
+      // Send notification to author
+      var author = await _context.Users.FirstOrDefaultAsync(u => u.Username == blog.Author);
+      if (author != null)
       {
-        var author = await _context.Users.FirstOrDefaultAsync(u => u.Username == blog.Author);
-        if (author != null)
+        _context.Notifications.Add(new Notification
         {
-          _context.Notifications.Add(new Notification
-          {
-            UserId = author.Id,
-            Message = $"Your blog '{blog.Title}' has been deleted by an administrator.",
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow
-          });
-        }
+          UserId = author.Id,
+          Message = $"Your blog post '{blog.Title}' has been deleted by admin.",
+          IsRead = false,
+          CreatedAt = DateTime.UtcNow
+        });
       }
 
       _context.Blogs.Remove(blog);

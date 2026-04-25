@@ -220,6 +220,8 @@ namespace FinalBlog.Controllers
       HttpContext.Session.SetString("UserEmail", user.Email);
       HttpContext.Session.SetString("Role", user.Role);
 
+      TempData["SuccessMessage"] = $"Welcome back, {user.Username}!";
+
       if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
         return Redirect(model.ReturnUrl);
 
@@ -469,6 +471,15 @@ namespace FinalBlog.Controllers
       {
         return NotFound();
       }
+
+      // Load recent activities for this user
+      var activities = await _context.Activities
+          .Where(a => a.Username == username)
+          .OrderByDescending(a => a.CreatedAt)
+          .Take(10)
+          .ToListAsync();
+
+      ViewBag.UserActivities = activities;
 
       return View(user);
     }

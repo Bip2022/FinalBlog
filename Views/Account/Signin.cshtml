@@ -67,8 +67,23 @@
     </div>
   </div>
 
-  @section Scripts {
+   @section Scripts {
     @{
       await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div id="error-toast" class="d-none">@TempData["ErrorMessage"]</div>
+    }
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const errorMsg = document.getElementById('error-toast')?.textContent;
+
+        if (errorMsg && typeof toastr !== 'undefined') {
+            toastr.error(errorMsg);
+        }
+    });
+    </script>
   }

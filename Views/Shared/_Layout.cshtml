@@ -33,7 +33,38 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-   
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div id="success-toast" class="d-none">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div id="error-toast" class="d-none">@TempData["ErrorMessage"]</div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div id="info-toast" class="d-none">@TempData["Info"]</div>
+    }
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const successMsg = document.getElementById('success-toast')?.textContent;
+        const errorMsg = document.getElementById('error-toast')?.textContent;
+        const infoMsg = document.getElementById('info-toast')?.textContent;
+
+        if (successMsg && typeof toastr !== 'undefined') {
+            toastr.success(successMsg);
+        }
+        if (errorMsg && typeof toastr !== 'undefined') {
+            toastr.error(errorMsg);
+        }
+        if (infoMsg && typeof toastr !== 'undefined') {
+            toastr.info(infoMsg);
+        }
+    });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 

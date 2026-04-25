@@ -103,4 +103,40 @@
     </div>
   </div>
 
+  @if (ViewBag.UserActivities != null && ((List<FinalBlog.Models.Activity>)ViewBag.UserActivities).Any())
+  {
+    <div class="mt-4">
+      <h4><i class="bi bi-bell"></i> Recent Notifications</h4>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          @foreach (var activity in (List<FinalBlog.Models.Activity>)ViewBag.UserActivities)
+          {
+            <div class="d-flex align-items-start mb-3 pb-3 border-bottom">
+              <div class="me-3">
+                @if (activity.Type == "Blog")
+                {
+                  <i class="fas fa-blog text-info fa-lg"></i>
+                }
+                else
+                {
+                  <i class="fas fa-user text-success fa-lg"></i>
+                }
+              </div>
+              <div class="flex-grow-1">
+                <div class="fw-semibold">@activity.Action</div>
+                <div class="text-muted small">
+                  @if (activity.Type == "Blog" && !string.IsNullOrEmpty(activity.BlogTitle))
+                  {
+                    <span>Blog: @activity.BlogTitle</span>
+                  }
+                  <span class="ms-2">@activity.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
 </div>
