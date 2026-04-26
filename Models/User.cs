@@ -33,6 +33,6 @@ namespace FinalBlog.Models
 
     public bool IsLocked { get; set; } = false;
     
- public string? ProfileImage { get; set; }
+  public string? ProfileImage { get; set; }
   }
 }

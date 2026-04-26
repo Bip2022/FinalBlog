@@ -14,8 +14,8 @@ namespace FinalBlog.Models.ViewModels
 
     public string? ExistingProfileImage { get; set; }
 
-    public IFormFile? ProfileImage { get; set; }
+  public IFormFile? ProfileImage { get; set; }
 
 
-  }
+}
 }
