@@ -563,11 +563,54 @@ namespace FinalBlog.Controllers
         _logger.LogInformation("Profile image updated for user: {Username} to {Url}", username, result.Url);
       }
 
+      // Check for uniqueness if email changed
+      if (model.Email != user.Email)
+      {
+        var existingEmail = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email && u.Id != user.Id);
+        if (existingEmail != null)
+        {
+          TempData["ErrorMessage"] = "Email already in use.";
+          return View(model);
+        }
+      }
+
+      // Check for uniqueness if username changed
+      if (model.Username != user.Username)
+      {
+        var existingUsername = await _context.Users.FirstOrDefaultAsync(u => u.Username == model.Username && u.Id != user.Id);
+        if (existingUsername != null)
+        {
+          TempData["ErrorMessage"] = "Username already taken.";
+          return View(model);
+        }
+      }
+
+      // Check if username changed
+      var usernameChanged = user.Username != model.Username;
+
+      user.Username = model.Username!;
+      user.Email = model.Email!;
+
       _context.Update(user);
       await _context.SaveChangesAsync();
 
+      // If username changed, update the claims
+      if (usernameChanged)
+      {
+        var newClaims = new List<Claim>
+        {
+          new Claim(ClaimTypes.Name, user.Username),
+          new Claim(ClaimTypes.Email, user.Email),
+          new Claim("UserId", user.Id.ToString()),
+          new Claim(ClaimTypes.Role, user.Role)
+        };
+        var newIdentity = new ClaimsIdentity(newClaims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var newPrincipal = new ClaimsPrincipal(newIdentity);
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, newPrincipal);
+      }
+
       // Only show success message if profile was actually changed
-      if (model.ProfileImage != null || user.Username != model.Username || user.Email != model.Email)
+      if (model.ProfileImage != null || usernameChanged || user.Email != model.Email)
       {
         TempData["Success"] = "Profile updated successfully";
       }
